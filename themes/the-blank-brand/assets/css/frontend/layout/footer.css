@@ -1,0 +1,199 @@
+/* ==========================================================================
+   Site Footer
+   ========================================================================== */
+
+.site-footer {
+	background-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+	padding-block-start: var(--wp--custom--spacing--40);
+}
+
+/* Grid
+   ========================================================================== */
+
+.site-footer__inner {
+	display: grid;
+	gap: var(--wp--custom--spacing--40);
+	grid-template-columns: 1fr;
+}
+
+@media (min-width: 48em) {
+	.site-footer__inner {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+@media (min-width: 64em) {
+	.site-footer__inner {
+		align-items: center;
+		gap: var(--wp--custom--spacing--62);
+		grid-template-columns: 1fr 1fr 1fr;
+	}
+}
+
+/* Brand box
+   ========================================================================== */
+
+.site-footer__box {
+	align-items: center;
+	background-color: var(--wp--preset--color--primary);
+	border: 5px solid var(--wp--preset--color--tertiary);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	max-width: 20rem;
+	padding: var(--wp--custom--spacing--32) var(--wp--custom--spacing--46);
+}
+
+.site-footer__box > a {
+	display: inline-block;
+}
+
+.site-footer__box > a img {
+	/* Logo is white — invert to black for the white box */
+	display: block;
+	filter: invert(1);
+}
+
+.site-footer__box > p {
+	color: var(--wp--preset--color--muted);
+	font-size: var(--wp--preset--font-size--xs);
+	margin-block-end: 0;
+	text-align: center;
+}
+
+/* Column headings
+   ========================================================================== */
+
+.site-footer__col-heading {
+	color: var(--wp--preset--color--primary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	margin-block-end: var(--wp--custom--spacing--16);
+	text-align: center;
+	text-transform: uppercase;
+}
+
+/* Navigation menu
+   ========================================================================== */
+
+.site-footer__menu {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	text-align: center;
+}
+
+.site-footer__menu li > a {
+	color: var(--wp--preset--color--primary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 400;
+	text-decoration: none;
+	transition: color 0.15s ease;
+}
+
+.site-footer__menu li > a:hover {
+	color: var(--wp--preset--color--secondary);
+}
+
+.site-footer__menu li > a:focus-visible {
+	border-radius: var(--wp--custom--border-radius--sm);
+	outline: 2px solid var(--wp--preset--color--primary);
+	outline-offset: 2px;
+}
+
+/* Address / contact
+   ========================================================================== */
+
+.site-footer__address {
+	align-items: center;
+	display: flex;
+	flex-direction: column;
+	font-style: normal;
+	gap: var(--wp--custom--spacing--8);
+	text-align: center;
+}
+
+.site-footer__address a {
+	color: var(--wp--preset--color--primary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 400;
+	text-decoration: none;
+	transition: color 0.15s ease;
+}
+
+.site-footer__address a:hover {
+	color: var(--wp--preset--color--secondary);
+}
+
+.site-footer__address a:focus-visible {
+	border-radius: var(--wp--custom--border-radius--sm);
+	outline: 2px solid var(--wp--preset--color--primary);
+	outline-offset: 2px;
+}
+
+/* Social links
+   ========================================================================== */
+
+.site-footer__social {
+	display: flex;
+	gap: var(--wp--custom--spacing--12);
+	justify-content: center;
+	list-style: none;
+	margin: var(--wp--custom--spacing--24) 0 0;
+	padding: 0;
+}
+
+.site-footer__social-link {
+	align-items: center;
+	background-color: var(--wp--preset--color--primary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--tertiary);
+	display: flex;
+	height: 2.5rem;
+	justify-content: center;
+	text-decoration: none;
+	transition: background-color 0.15s ease, color 0.15s ease;
+	width: 2.5rem;
+}
+
+.site-footer__social-link:hover {
+	background-color: var(--wp--preset--color--secondary);
+	color: var(--wp--preset--color--tertiary);
+}
+
+.site-footer__social-link:focus-visible {
+	outline: 2px solid var(--wp--preset--color--primary);
+	outline-offset: 3px;
+}
+
+/* Bottom bar
+   ========================================================================== */
+
+.site-footer__bottom {
+	border-top: 1px solid rgba(255 255 255 / 0.12);
+	margin-block-start: var(--wp--custom--spacing--40);
+	padding-block: var(--wp--custom--spacing--24);
+}
+
+.site-footer__copyright {
+	color: var(--wp--preset--color--secondary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	margin: 0;
+}
+
+/* Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	.site-footer__address a,
+	.site-footer__menu li > a,
+	.site-footer__social-link {
+		transition: none;
+	}
+}

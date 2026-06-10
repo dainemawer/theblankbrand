@@ -1,0 +1,95 @@
+/* WooCommerce layout */
+
+/* Archive header */
+
+.page-title {
+	font-size: var(--wp--preset--font-size--5-xl);
+	text-transform: uppercase;
+}
+
+/* Product loop */
+
+.woocommerce ul.products .attachment-woocommerce_thumbnail,
+.woocommerce ul.products .woocommerce-placeholder {
+	aspect-ratio: 300 / 533;
+	display: block;
+	object-fit: cover;
+	width: 100%;
+}
+
+/* Result count */
+
+.woocommerce-result-count {
+	color: var(--wp--preset--color--muted);
+	font-weight: 400;
+}
+
+/* Ordering select */
+
+.woocommerce-ordering .orderby {
+	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+	font-size: var(--wp--preset--font-size--sm);
+	padding: 0.625rem 0.75rem;
+	text-transform: uppercase;
+}
+
+/* Pagination */
+
+.woocommerce-pagination ul.page-numbers {
+	border: none !important;
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.woocommerce-pagination ul.page-numbers li {
+	border-right: none;
+	float: none;
+	overflow: visible;
+}
+
+.woocommerce-pagination ul.page-numbers li:not(:last-child) {
+	margin-right: var(--wp--custom--spacing--12);
+}
+
+.woocommerce-pagination ul.page-numbers .page-numbers {
+	align-items: center;
+	background-color: var(--wp--preset--color--primary);
+	border: 1px solid var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--tertiary);
+	display: flex;
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 500;
+	height: 2.5rem;
+	justify-content: center;
+	line-height: 1;
+	min-width: 2.5rem;
+	padding: 0 0.5rem;
+	text-decoration: none;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.woocommerce-pagination ul.page-numbers a.page-numbers:focus,
+.woocommerce-pagination ul.page-numbers a.page-numbers:focus-visible,
+.woocommerce-pagination ul.page-numbers a.page-numbers:hover {
+	background-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+.woocommerce-pagination ul.page-numbers .page-numbers.current {
+	background-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+.woocommerce-pagination ul.page-numbers .page-numbers.dots {
+	background-color: transparent;
+	border-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.woocommerce-pagination ul.page-numbers .page-numbers {
+		transition: none;
+	}
+}
