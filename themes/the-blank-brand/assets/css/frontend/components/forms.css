@@ -1,0 +1,93 @@
+.site-form br {
+	display: none;
+}
+
+.site-form .label {
+	visibility: hidden;
+	text-indent: -9999px;
+	position: absolute;
+}
+
+.site-form input[type="text"],
+.site-form input[type="email"],
+.site-form input[type="tel"],
+.site-form select,
+.site-form textarea {
+	box-sizing: border-box;
+	width: 100%;
+	display: block;
+	padding: 16px 20px;
+	border: 2px solid var(--wp--preset--color--tertiary);
+	background: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	appearance: none;
+}
+
+.site-form input[type="text"]:focus,
+.site-form input[type="email"]:focus,
+.site-form input[type="tel"]:focus,
+.site-form select:focus,
+.site-form textarea:focus {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 2px;
+}
+
+.site-form input[type="text"]::placeholder,
+.site-form input[type="email"]::placeholder,
+.site-form input[type="tel"]::placeholder,
+.site-form textarea::placeholder {
+	color: var(--wp--preset--color--tertiary);
+	opacity: 1; /* Firefox reduces placeholder opacity by default */
+}
+
+.site-form select {
+	background: var(--wp--preset--color--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 20px center;
+	padding-right: 44px;
+	cursor: pointer;
+}
+
+.site-form textarea {
+	resize: vertical;
+	min-height: 140px;
+}
+
+.site-form .wpcf7-form-control-wrap {
+	display: block;
+}
+
+.site-form .wpcf7-form p {
+	margin: 0 0 var(--wp--custom--spacing--8);
+}
+
+.site-form input[type="submit"] {
+	display: block;
+	margin-left: auto;
+	padding: 14px 32px;
+	border: none;
+	border-radius: var(--wp--custom--border-radius--full);
+	background: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: opacity 0.2s ease;
+}
+
+.site-form input[type="submit"]:hover {
+	opacity: 0.85;
+}
+
+.site-form__two-cols {
+	display: flex;
+	gap: var(--wp--custom--spacing--16);
+}
+
+.site-form__two-cols p {
+	width: 100%;
+}

@@ -1,0 +1,33 @@
+/* Layout */
+
+/*
+ * Constrained layout — mirrors what WordPress generates for block themes.
+ * Required in classic themes since `is-layout-constrained` isn't auto-applied.
+ */
+
+@import url("header.css");
+@import url("footer.css");
+@import url("woocommerce.css");
+
+.container {
+	max-width: 80rem;
+	margin-inline: auto;
+}
+
+.entry-content > *,
+.wp-block-post-content > * {
+	max-width: var(--wp--style--global--content-size);
+	margin-inline: auto;
+}
+
+.entry-content > .alignwide,
+.wp-block-post-content > .alignwide {
+	max-width: var(--wp--style--global--wide-size);
+	margin-inline: auto;
+}
+
+.entry-content > .alignfull,
+.wp-block-post-content > .alignfull {
+	max-width: none;
+	margin-inline: 0;
+}
