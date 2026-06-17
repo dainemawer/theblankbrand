@@ -22,6 +22,13 @@ class Assets implements ModuleInterface {
 	use GetAssetInfo;
 
 	/**
+	 * Google Fonts stylesheet URL (Asap + Libre Baskerville).
+	 *
+	 * @var string
+	 */
+	const GOOGLE_FONTS_URL = 'https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap';
+
+	/**
 	 * Can this module be registered?
 	 *
 	 * @return bool
@@ -43,6 +50,7 @@ class Assets implements ModuleInterface {
 		add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ] );
 		add_action( 'enqueue_block_editor_assets', [ $this, 'enqueue_block_editor_scripts' ] );
 		add_action( 'wp_enqueue_scripts', [ $this, 'styles' ] );
+		add_action( 'enqueue_block_assets', [ $this, 'editor_fonts' ] );
 	}
 
 
@@ -88,7 +96,7 @@ class Assets implements ModuleInterface {
 	public function styles() {
 		wp_enqueue_style(
 			'blank-brand-fonts',
-			'https://fonts.googleapis.com/css2?family=Asap:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap',
+			self::GOOGLE_FONTS_URL,
 			[],
 			null
 		);
@@ -98,6 +106,30 @@ class Assets implements ModuleInterface {
 			BLANK_BRAND_THEME_TEMPLATE_URL . '/dist/css/frontend.css',
 			[ 'blank-brand-fonts' ],
 			$this->get_asset_info( 'frontend', 'version' )
+		);
+	}
+
+	/**
+	 * Enqueue the web fonts inside the block editor.
+	 *
+	 * On the front end the fonts load via {@see styles()}. In the editor the
+	 * font-family declarations come from theme.json, but the font files
+	 * themselves are never loaded, so text falls back to system fonts.
+	 * `enqueue_block_assets` runs in both contexts and reaches the editor
+	 * iframe; gate to admin so the front end isn't double-loaded.
+	 *
+	 * @return void
+	 */
+	public function editor_fonts() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		wp_enqueue_style(
+			'blank-brand-fonts',
+			self::GOOGLE_FONTS_URL,
+			[],
+			null
 		);
 	}
 }

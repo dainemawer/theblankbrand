@@ -8,6 +8,10 @@
 	padding-block-start: var(--wp--custom--spacing--40);
 }
 
+.site-footer .container {
+	padding-inline: 1.25rem; /* 20px */
+}
+
 /* Grid
    ========================================================================== */
 
@@ -20,6 +24,19 @@
 @media (min-width: 48em) {
 	.site-footer__inner {
 		grid-template-columns: 1fr 1fr;
+	}
+}
+
+/* Tablet only: the brand box spans the full width on its own row so the two
+   navigation menus sit side-by-side beneath it as the two columns. At >=64em
+   the grid becomes three columns and the box returns to a single cell. */
+@media (min-width: 48em) and (max-width: 63.999em) {
+	/* Parent selector raises specificity above the base .site-footer__box rule,
+	   which appears later in the source order, so these overrides win. */
+	.site-footer__inner .site-footer__box {
+		grid-column: 1 / -1;
+		justify-self: stretch;
+		max-width: none;
 	}
 }
 
@@ -41,6 +58,7 @@
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
+	justify-self: center; /* center the capped-width box within its grid column */
 	max-width: 20rem;
 	padding: var(--wp--custom--spacing--32) var(--wp--custom--spacing--46);
 }
@@ -185,6 +203,12 @@
 	font-family: var(--wp--preset--font-family--asap);
 	font-size: var(--wp--preset--font-size--sm);
 	margin: 0;
+}
+
+@media (max-width: 63.999em) {
+	.site-footer__copyright {
+		text-align: center;
+	}
 }
 
 /* Reduced motion

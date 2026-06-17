@@ -13,6 +13,10 @@ body.admin-bar .site-header {
 	top: var(--wp-admin--admin-bar--height, 32px);
 }
 
+.site-header .container {
+	padding-inline: 1.25rem; /* 20px */
+}
+
 .site-header__inner {
 	align-items: center;
 	display: flex;
@@ -374,19 +378,23 @@ html.no-js .nav-dropdown-toggle {
 	display: none;
 }
 
-/* Open on hover / focus-within — works with and without JS */
-.site-header__menu > .menu-item-has-children:hover > .sub-menu,
-.site-header__menu > .menu-item-has-children:focus-within > .sub-menu {
-	opacity: 1;
-	transform: translateY(0);
-	transition-delay: 0s;
-	visibility: visible;
-}
+/* Open on hover / focus-within — works with and without JS.
+   Scoped to the desktop layout so touch devices never trigger the
+   absolutely-positioned flyout (the drawer accordion handles mobile). */
+@media (min-width: 68.75em) {
+	.site-header__menu > .menu-item-has-children:hover > .sub-menu,
+	.site-header__menu > .menu-item-has-children:focus-within > .sub-menu {
+		opacity: 1;
+		transform: translateY(0);
+		transition-delay: 0s;
+		visibility: visible;
+	}
 
-/* No-JS: suppress transition so there's no unstyled flicker */
-html.no-js .site-header__menu > .menu-item-has-children:hover > .sub-menu,
-html.no-js .site-header__menu > .menu-item-has-children:focus-within > .sub-menu {
-	transition: none;
+	/* No-JS: suppress transition so there's no unstyled flicker */
+	html.no-js .site-header__menu > .menu-item-has-children:hover > .sub-menu,
+	html.no-js .site-header__menu > .menu-item-has-children:focus-within > .sub-menu {
+		transition: none;
+	}
 }
 
 /* ==========================================================================
@@ -400,7 +408,227 @@ html.no-js .site-header__menu > .menu-item-has-children:focus-within > .sub-menu
 	.site-header__minicart .woocommerce-mini-cart__buttons a,
 	.site-header__minicart .woocommerce-mini-cart-item .remove,
 	.nav-dropdown-toggle,
-	.nav-dropdown-toggle__icon {
+	.nav-dropdown-toggle__icon,
+	.site-header__nav {
 		transition: none;
 	}
+}
+
+/* ==========================================================================
+   Mobile drawer (below 68.75em / 1100px)
+   The horizontal nav collapses into an off-canvas drawer toggled by the
+   hamburger button. Sub-menus become inline accordions so every item and
+   sub-item is reachable by touch and keyboard.
+   ========================================================================== */
+
+/* Hidden in the desktop layout; revealed inside the mobile media query. */
+.site-header__menu-toggle,
+.site-header__nav-head,
+.site-header__backdrop {
+	display: none;
+}
+
+/* Hamburger / close buttons share sizing for a comfortable touch target. */
+.site-header__menu-toggle,
+.site-header__nav-close {
+	align-items: center;
+	background: transparent;
+	border: none;
+	border-radius: var(--wp--custom--border-radius--sm);
+	color: var(--wp--preset--color--primary);
+	cursor: pointer;
+	justify-content: center;
+	/* Minimum touch target (WCAG 2.5.8) */
+	min-height: 2.75rem;
+	min-width: 2.75rem;
+	padding: var(--wp--custom--spacing--8);
+	transition: color 0.15s ease;
+}
+
+.site-header__menu-toggle:hover,
+.site-header__nav-close:hover {
+	color: var(--wp--preset--color--secondary);
+}
+
+.site-header__menu-toggle:focus-visible,
+.site-header__nav-close:focus-visible {
+	outline: 2px solid var(--wp--preset--color--primary);
+	outline-offset: 2px;
+}
+
+.site-header__menu-toggle-icon,
+.site-header__nav-close-icon {
+	display: block;
+}
+
+@media (max-width: 68.749em) {
+
+	/* Layout: logo left, cart + hamburger pushed to the right. */
+	.site-header__inner {
+		gap: var(--wp--custom--spacing--8);
+	}
+
+	.site-header__logo {
+		margin-inline-end: auto;
+	}
+
+	.site-header__menu-toggle {
+		display: inline-flex;
+		order: 1; /* always the right-most control */
+	}
+
+	/* Backdrop behind the drawer. Visibility is driven by the [hidden]
+	   attribute toggled in JS. */
+	.site-header__backdrop {
+		background-color: rgb(0 0 0 / 0.5);
+		border: 0;
+		display: block;
+		inset: 0;
+		position: fixed;
+		z-index: 150;
+	}
+
+	.site-header__backdrop[hidden] {
+		display: none;
+	}
+
+	/* The drawer panel. */
+	.site-header__nav {
+		background-color: var(--wp--preset--color--tertiary);
+		bottom: 0;
+		display: flex;
+		flex-direction: column;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding-bottom: env(safe-area-inset-bottom);
+		position: fixed;
+		right: 0;
+		top: 0;
+		transform: translateX(100%);
+		transition: transform 0.25s ease;
+		width: min(85vw, 22rem);
+		z-index: 200;
+	}
+
+	.site-header__nav.is-active {
+		transform: translateX(0);
+	}
+
+	body.admin-bar .site-header__nav {
+		top: var(--wp-admin--admin-bar--height, 46px);
+	}
+
+	.site-header__nav-head {
+		align-items: center;
+		display: flex;
+		flex-shrink: 0;
+		justify-content: flex-end;
+		padding: var(--wp--custom--spacing--16) var(--wp--custom--spacing--16) 0;
+	}
+
+	/* Vertical menu. */
+	.site-header__menu {
+		align-items: stretch;
+		flex-direction: column;
+		gap: 0;
+		padding: var(--wp--custom--spacing--8) var(--wp--custom--spacing--16)
+			var(--wp--custom--spacing--24);
+	}
+
+	.site-header__menu > .menu-item {
+		align-items: center;
+		border-top: 1px solid rgb(255 255 255 / 0.1);
+		display: flex;
+		flex-wrap: wrap;
+		position: static; /* sub-menu flows inline, not absolutely */
+	}
+
+	.site-header__menu > .menu-item > a {
+		align-items: center;
+		display: flex;
+		flex: 1 1 auto;
+		font-size: 1rem;
+		letter-spacing: 0.04em;
+		min-height: 2.75rem;
+		padding-block: var(--wp--custom--spacing--12);
+		padding-inline: 0;
+	}
+
+	/* Accordion toggle sits to the right of the link. */
+	.site-header__menu .nav-dropdown-toggle {
+		flex: 0 0 auto;
+		margin-inline: 0;
+		min-height: 2.75rem;
+		min-width: 2.75rem;
+	}
+
+	/* Sub-menu becomes a collapsible inline panel. */
+	.site-header__menu .sub-menu {
+		background-color: transparent;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		display: none;
+		flex-basis: 100%;
+		min-width: 0;
+		opacity: 1;
+		padding: 0 0 var(--wp--custom--spacing--8);
+		position: static;
+		transform: none;
+		transition: none;
+		visibility: visible;
+	}
+
+	.site-header__menu > .menu-item-has-children.is-open > .sub-menu {
+		display: block;
+	}
+
+	.site-header__menu .sub-menu .menu-item > a {
+		align-items: center;
+		display: flex;
+		min-height: 2.75rem;
+		padding-block: var(--wp--custom--spacing--8);
+		padding-inline-start: var(--wp--custom--spacing--16);
+	}
+
+	.site-header__menu .sub-menu .menu-item > a:hover {
+		background-color: transparent;
+		color: var(--wp--preset--color--secondary);
+	}
+
+	/* Keep the minicart panel within the viewport on small screens. */
+	.site-header__minicart {
+		width: min(22rem, calc(100vw - 2rem));
+	}
+
+	/* No-JS fallback: the drawer can't be toggled without JS, so render
+	   the menu inline and reveal every sub-menu so nothing is trapped. */
+	html.no-js .site-header__menu-toggle,
+	html.no-js .site-header__nav-head {
+		display: none;
+	}
+
+	html.no-js .site-header__inner {
+		flex-wrap: wrap;
+	}
+
+	html.no-js .site-header__nav {
+		background-color: transparent;
+		flex-basis: 100%;
+		max-width: none;
+		overflow: visible;
+		position: static;
+		transform: none;
+		width: 100%;
+		z-index: auto;
+	}
+
+	html.no-js .site-header__menu .sub-menu {
+		display: block;
+	}
+}
+
+/* Lock background scroll while the drawer is open. */
+body.nav-drawer-open {
+	overflow: hidden;
 }

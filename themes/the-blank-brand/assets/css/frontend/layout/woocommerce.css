@@ -4,10 +4,16 @@
 
 .page-title {
 	font-size: var(--wp--preset--font-size--5-xl);
+	margin-bottom: var(--wp--custom--spacing--8);
+	margin-top: var(--wp--custom--spacing--32);
 	text-transform: uppercase;
 }
 
 /* Product loop */
+
+.woocommerce ul.products {
+	margin-top: var(--wp--custom--spacing--32);
+}
 
 .woocommerce ul.products .attachment-woocommerce_thumbnail,
 .woocommerce ul.products .woocommerce-placeholder {
@@ -15,6 +21,48 @@
 	display: block;
 	object-fit: cover;
 	width: 100%;
+}
+
+/* The 300:533 crop is very tall; on the wider cards of tablet/mobile it gets
+   unwieldy, so use a shorter ratio there. Desktop keeps the full height. */
+@media (max-width: 768px) {
+	.woocommerce ul.products .attachment-woocommerce_thumbnail,
+	.woocommerce ul.products .woocommerce-placeholder {
+		aspect-ratio: 3 / 4;
+		object-fit: contain;
+	}
+}
+
+/* Single-column product grid on phones.
+   WooCommerce's own small-screen CSS floats products at 48% (two columns) for
+   any `columns-*` count down to its 768px breakpoint; force one full-width
+   column on phones only, leaving WooCommerce's 2-up in place on tablet
+   (600–768px). The `!important` beats WooCommerce's float-grid rules
+   regardless of load order. */
+@media (max-width: 600px) {
+	.woocommerce ul.products[class*="columns-"] li.product,
+	.woocommerce-page ul.products[class*="columns-"] li.product {
+		float: none !important;
+		margin-right: 0 !important;
+		width: 100% !important;
+	}
+}
+
+/* Product card title — 16px on mobile, 18px from tablet up. */
+.woocommerce ul.products li.product .woocommerce-loop-product__title {
+	font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+	.woocommerce ul.products li.product .woocommerce-loop-product__title {
+		font-size: 1.125rem;
+	}
+}
+
+/* Product card price. */
+.woocommerce ul.products li.product .price {
+	color: var(--wp--preset--color--muted);
+	font-size: var(--wp--preset--font-size--sm);
 }
 
 /* Result count */
@@ -36,6 +84,10 @@
 }
 
 /* Pagination */
+
+.woocommerce-pagination {
+	margin-bottom: var(--wp--custom--spacing--32);
+}
 
 .woocommerce-pagination ul.page-numbers {
 	border: none !important;
@@ -88,8 +140,547 @@
 	border-color: transparent;
 }
 
+/* ==========================================================================
+   Single product
+   ========================================================================== */
+
+/* Two-column layout — gallery ~38%, summary ~50%, with the remaining space as
+   a centre gutter. Flexbox (not floats) for responsiveness; the gallery keeps
+   an explicit width so WooCommerce's flexslider sizes the image correctly.
+   Applies from tablet up; WooCommerce stacks the columns below 768px. */
+@media (min-width: 768px) {
+	.woocommerce div.product {
+		align-items: flex-start;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+	}
+
+	.woocommerce div.product .woocommerce-product-gallery {
+		flex: 0 0 30%;
+		float: none;
+		margin: 0;
+		max-width: 30%;
+		min-width: 0;
+		width: 30%;
+	}
+
+	.woocommerce div.product .summary {
+		flex: 0 0 64%;
+		float: none;
+		margin: 0;
+		max-width: 64%;
+		min-width: 0;
+	}
+
+	/* Sections that follow the two columns span the full width on their own row. */
+	.woocommerce div.product .woocommerce-tabs,
+	.woocommerce div.product .upsells,
+	.woocommerce div.product .related {
+		flex: 0 0 100%;
+		max-width: 100%;
+	}
+}
+
+/* Per-colour gallery: a large main image with a grid of same-ratio thumbnails
+   below it. The theme ships no gallery slider, so images render stacked; this
+   lays them out and keeps thumbnails on the product portrait ratio (not the
+   square crop WooCommerce would otherwise clip them to). */
+.woocommerce div.product .woocommerce-product-gallery__wrapper {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--12);
+}
+
+/* Main image spans the full gallery width. */
+.woocommerce div.product .woocommerce-product-gallery__image:first-child {
+	flex: 0 0 100%;
+}
+
+.woocommerce div.product .woocommerce-product-gallery__image a {
+	display: block;
+}
+
+/* Lock every gallery image to one portrait ratio so promoting a thumbnail into
+   the main slot never changes the main image's height. A shorter ratio than the
+   source crop (300/533) keeps the featured image + thumbnails above the fold. */
+.woocommerce div.product .woocommerce-product-gallery__image img {
+	aspect-ratio: 3 / 4;
+	display: block;
+	height: auto;
+	object-fit: cover;
+	width: 100%;
+}
+
+/* Thumbnails (everything after the main image) — four per row, stacked left.
+   Subtract 3/4 of the gap so four 25% items fit on a line with gaps between. */
+.woocommerce div.product .woocommerce-product-gallery__image:nth-child(n+2) {
+	flex: 0 0 calc(25% - (var(--wp--custom--spacing--12) * 3 / 4));
+}
+
+.woocommerce div.product .woocommerce-product-gallery__image:nth-child(n+2) img {
+	cursor: pointer;
+}
+
+/* Product title — fluid up to 50px, uppercase. */
+.woocommerce div.product .product_title {
+	font-size: clamp(32px, 25.3774px + 1.6981vi, 50px);
+	margin-bottom: var(--wp--custom--spacing--16);
+	text-transform: uppercase;
+}
+
+/* SKU beneath the title — soft gray and slightly smaller. */
+.woocommerce div.product .product-sku {
+	color: var(--wp--preset--color--secondary);
+	font-size: var(--wp--preset--font-size--sm);
+	margin: var(--wp--custom--spacing--8) 0 0;
+}
+
+/* Full description in the summary. */
+.woocommerce div.product .woocommerce-product-details__description {
+	font-family: var(--wp--preset--font-family--libre-baskerville);
+	font-weight: 400;
+	margin-bottom: var(--wp--custom--spacing--24);
+	margin-top: var(--wp--custom--spacing--24);
+}
+
+/* Related / up-sell sections must clear the floated gallery + summary so they
+   sit below them, not wrapped alongside. */
+.woocommerce div.product .related,
+.woocommerce div.product .upsells {
+	clear: both;
+}
+
+/* Related products heading — 40px (theme.json 4xl token), uppercase. */
+.woocommerce div.product .related > h2 {
+	font-size: var(--wp--preset--font-size--4-xl);
+	text-transform: uppercase;
+}
+
+/* Price amount (the value inside the bdi). */
+.woocommerce div.product .summary .woocommerce-Price-amount {
+	color: var(--wp--preset--color--muted);
+}
+
+/* Add to cart — black, uppercase, fully rounded pill. */
+.woocommerce div.product .single_add_to_cart_button.button.alt {
+	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--primary);
+	letter-spacing: 0.08em;
+	padding: 0.875rem 2.5rem;
+	text-transform: uppercase;
+	transition: opacity 0.2s ease;
+}
+
+.woocommerce div.product .single_add_to_cart_button.button.alt:hover {
+	opacity: 0.85;
+}
+
+/* Colour is chosen via the swatch chips, so hide the native colour dropdown row
+   in the variations form — the chips set its value via JS. The size dropdown,
+   quantity and add-to-cart remain. */
+.woocommerce div.product form.variations_form .variations tr:has(select[name="attribute_pa_colour"]) {
+	display: none;
+}
+
+/* Lay the variations table out as stacked blocks (label above control) so the
+   custom size pills read like the colour chips, and hide the default cell
+   label — the "Size:" label is rendered inside the control instead. */
+.woocommerce div.product form.variations_form .variations,
+.woocommerce div.product form.variations_form .variations tbody,
+.woocommerce div.product form.variations_form .variations tr,
+.woocommerce div.product form.variations_form .variations td {
+	display: block;
+	width: auto;
+}
+
+.woocommerce div.product form.variations_form .variations th.label {
+	display: none;
+}
+
+/* Size is chosen via the custom radio pills, so hide the native select. */
+.woocommerce div.product form.variations_form select[name="attribute_pa_size"] {
+	display: none;
+}
+
+/* Custom size radio pills. */
+.tbb-size-label {
+	margin: var(--wp--custom--spacing--16) 0 0;
+}
+
+.tbb-sizes {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--12);
+	margin: 0.4rem 0 0;
+}
+
+.tbb-size {
+	align-items: center;
+	background: transparent;
+	border: 1px solid var(--wp--preset--color--tertiary);
+	border-radius: 999px;
+	color: var(--wp--preset--color--tertiary);
+	cursor: pointer;
+	display: inline-flex;
+	font-size: var(--wp--preset--font-size--sm);
+	height: 2.25rem;
+	justify-content: center;
+	min-width: 2.25rem;
+	padding: 0 0.75rem;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.tbb-size:hover,
+.tbb-size:focus-visible {
+	background: var(--wp--preset--color--tertiary);
+	border-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+.tbb-size.is-active {
+	border: 2px solid var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--tertiary);
+	font-weight: 600;
+}
+
+/* Unavailable for the selected colour (no stock / not offered) — greyed and
+   non-interactive, clearly distinct from the active-looking unselected state. */
+.tbb-size:disabled,
+.tbb-size--disabled {
+	border-color: var(--wp--preset--color--secondary);
+	color: var(--wp--preset--color--secondary);
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.tbb-size:disabled:hover,
+.tbb-size--disabled:hover {
+	background: transparent;
+	border-color: var(--wp--preset--color--secondary);
+	color: var(--wp--preset--color--secondary);
+}
+
+/* Add-to-cart row: quantity stepper + add-to-cart button, divided from the
+   bulk-order CTA below by a bottom border. */
+.woocommerce div.product form.variations_form .woocommerce-variation-add-to-cart {
+	align-items: stretch;
+	border-bottom: 1px solid #999;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--12);
+	padding-bottom: var(--wp--custom--spacing--24);
+}
+
+/* Quantity stepper — bordered group with − / + buttons either side of the
+   number input, matching the add-to-cart button's height. */
+.woocommerce div.product form.variations_form .quantity {
+	align-items: stretch;
+	border: 1px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--md);
+	display: inline-flex;
+	overflow: hidden;
+}
+
+.tbb-qty-btn {
+	background: transparent;
+	border: 0;
+	color: var(--wp--preset--color--tertiary);
+	cursor: pointer;
+	font-size: 1.125rem;
+	line-height: 1;
+	padding: 0 1rem;
+}
+
+.tbb-qty-btn--minus {
+	border-right: 1px solid var(--wp--preset--color--tertiary);
+}
+
+.tbb-qty-btn--plus {
+	border-left: 1px solid var(--wp--preset--color--tertiary);
+}
+
+.woocommerce div.product form.variations_form .quantity .qty {
+	appearance: textfield;
+	-moz-appearance: textfield;
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	font-size: var(--wp--preset--font-size--sm);
+	padding: 0 0.5rem;
+	text-align: center;
+	width: 3rem;
+}
+
+.woocommerce div.product form.variations_form .quantity .qty::-webkit-outer-spin-button,
+.woocommerce div.product form.variations_form .quantity .qty::-webkit-inner-spin-button {
+	-webkit-appearance: none;
+	margin: 0;
+}
+
+/* Bulk-order CTA beneath the add-to-cart row: "Looking to order in bulk?" + the
+   Bulk Order Grid trigger. */
+.tbb-bulk-cta {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--12);
+	margin-top: var(--wp--custom--spacing--16);
+}
+
+.tbb-bulk-cta__text {
+	color: var(--wp--preset--color--secondary);
+	font-size: var(--wp--preset--font-size--sm);
+}
+
+/* Variations table launched in a modal (built/relocated by JS).
+   ========================================================================== */
+
+/* Trigger button — outlined pill in the bulk-order CTA below the add-to-cart. */
+.product-table-modal__trigger {
+	background: transparent;
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--tertiary);
+	cursor: pointer;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	padding: 0.875rem 2rem;
+	text-transform: uppercase;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.product-table-modal__trigger:hover {
+	background: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+.product-table-modal__trigger:focus-visible {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 2px;
+}
+
+/* Dialog panel (native top-layer <dialog>). */
+.product-table-modal {
+	background: var(--wp--preset--color--primary);
+	border: none;
+	border-radius: var(--wp--custom--border-radius--md);
+	box-shadow: 0 12px 48px rgb(0 0 0 / 0.25);
+	color: var(--wp--preset--color--tertiary);
+	max-height: 85vh;
+	max-width: min(77rem, 92vw);
+	padding: 0;
+	width: 100%;
+}
+
+.product-table-modal::backdrop {
+	background: rgb(0 0 0 / 0.5);
+}
+
+.product-table-modal__inner {
+	display: flex;
+	flex-direction: column;
+	max-height: 85vh;
+}
+
+.product-table-modal__head {
+	align-items: center;
+	border-bottom: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	display: flex;
+	gap: var(--wp--custom--spacing--16);
+	justify-content: space-between;
+	padding: var(--wp--custom--spacing--16) var(--wp--custom--spacing--24);
+}
+
+.product-table-modal__title {
+	font-size: var(--wp--preset--font-size--lg);
+	margin: 0;
+	text-transform: uppercase;
+}
+
+.product-table-modal__close {
+	align-items: center;
+	background: transparent;
+	border: none;
+	border-radius: var(--wp--custom--border-radius--sm);
+	color: var(--wp--preset--color--tertiary);
+	cursor: pointer;
+	display: inline-flex;
+	flex-shrink: 0;
+	justify-content: center;
+	/* Minimum touch target (WCAG 2.5.8) */
+	min-height: 2.75rem;
+	min-width: 2.75rem;
+}
+
+.product-table-modal__close:focus-visible {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 2px;
+}
+
+/* Scroll container — keeps the wide table usable inside the dialog. */
+.product-table-modal__body {
+	-webkit-overflow-scrolling: touch;
+	overflow: auto;
+	overscroll-behavior: contain;
+	padding: var(--wp--custom--spacing--24);
+}
+
+/* Bulk-order table: black header with white text. */
+.product-table-modal__body .wc-bulk-variations-table .wcbvp-head-group:first-child .wcbvp-row:first-child {
+	background: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+/* Prices render at regular weight, not bold. */
+.product-table-modal__body .wc-bulk-variations-table .price {
+	font-weight: 400;
+}
+
+/* Rule directly beneath the "View Bulk Order Grid" trigger. */
+.product-table-modal__rule {
+	border: none;
+	border-top: 1px solid #999;
+	margin-block: var(--wp--custom--spacing--16);
+}
+
+/* Modal footer — holds the bulk grid's own items / total / add-to-cart. */
+.product-table-modal__foot {
+	border-top: 1px solid #999;
+	padding: var(--wp--custom--spacing--16) var(--wp--custom--spacing--24);
+}
+
+/* Bulk-order grid footer: add-to-cart to the left, totals inline on one line.
+ * Scoped under the modal foot to override the plugin's own `display:grid`. */
+.product-table-modal__foot .wcbvp-total-wrapper {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--24);
+	justify-content: space-between;
+}
+
+.product-table-modal__foot .wcbvp-total-right {
+	order: -1;
+}
+
+.product-table-modal__foot .wcbvp-total-left {
+	display: flex;
+	gap: var(--wp--custom--spacing--24);
+}
+
+.product-table-modal__foot .wcbvp-total-left p {
+	margin: 0;
+}
+
+/* The plugin renders the same items/total twice: the visible "Items / Total"
+   labels and a sentence-form `role="status"` live region. Keep the labels and
+   make the status visually hidden (still announced to screen readers). */
+.product-table-modal__foot .wcbvp-total-left label[role="status"] {
+	border: 0;
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+/* In-stock availability text in black rather than the default green. */
+.woocommerce div.product .stock.in-stock {
+	color: var(--wp--preset--color--tertiary);
+}
+
+/* ==========================================================================
+   Notices & cart
+   ========================================================================== */
+
+/* Notices wrapper — black panel, no border. Covers the success / info / error
+   notice boxes WooCommerce renders inside the wrapper. */
+.woocommerce-notices-wrapper .woocommerce-message,
+.woocommerce-notices-wrapper .woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-error {
+	background-color: var(--wp--preset--color--tertiary);
+	border: none;
+	color: var(--wp--preset--color--primary);
+}
+
+/* Centre the message text with the action button and push the button to the
+   right. WooCommerce renders message/info as a <div> holding the text + button
+   directly, but error notices as a <ul> whose <li> holds them — so the flex
+   layout goes on whichever element actually contains both. */
+.woocommerce-notices-wrapper .woocommerce-message,
+.woocommerce-notices-wrapper .woocommerce-info,
+.woocommerce-notices-wrapper .woocommerce-error li {
+	align-items: center;
+	display: flex;
+	gap: var(--wp--custom--spacing--16);
+	justify-content: space-between;
+}
+
+/* The leading icon is an absolutely positioned ::before with a fixed top, so it
+   no longer lines up once the text is vertically centred — pin it to the
+   middle. */
+.woocommerce-notices-wrapper .woocommerce-message::before,
+.woocommerce-notices-wrapper .woocommerce-info::before,
+.woocommerce-notices-wrapper .woocommerce-error::before {
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+/* Notice action button (e.g. "View cart") — white-on-black, with a white
+   outline so it stays legible against the black panel. */
+.woocommerce-notices-wrapper .button,
+.woocommerce-notices-wrapper a.button {
+	background-color: var(--wp--preset--color--tertiary);
+	border: 1px solid var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--primary);
+}
+
+/* Cart "Proceed to checkout" and checkout "Place order" submit buttons —
+   outlined pill matching the theme's other block buttons: white fill, black
+   border, fully rounded. */
+.wc-block-components-button.wp-element-button.wc-block-cart__submit-button.contained,
+.wc-block-components-button.wp-element-button.wc-block-components-checkout-place-order-button.contained {
+	background-color: var(--wp--preset--color--primary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--tertiary);
+}
+
+/* Sticky checkout summary — the sticky element is the sidebar column (WooCommerce
+   sets `top: 24px` on `.wc-block-checkout__sidebar`), not the order-summary block
+   inside it. Offset its sticky top by the site header height plus the original
+   24px gap so it parks below the sticky header instead of under it. The extra
+   class lifts specificity above WooCommerce's own single-class rule. */
+.wc-block-checkout .wc-block-checkout__sidebar {
+	top: calc(var(--wp--custom--header-height) + var(--wp--custom--spacing--24));
+}
+
+/* When the admin bar is present the header is pushed down by its height, so add
+   that on top — matching the header's own admin-bar offset. */
+body.admin-bar .wc-block-checkout .wc-block-checkout__sidebar {
+	top: calc(
+		var(--wp--custom--header-height) + var(--wp--custom--spacing--24) +
+			var(--wp-admin--admin-bar--height, 32px)
+	);
+}
+
+/* Lock background scroll while the dialog is open. */
+body.has-modal-open {
+	overflow: hidden;
+}
+
 @media (prefers-reduced-motion: reduce) {
-	.woocommerce-pagination ul.page-numbers .page-numbers {
+	.woocommerce-pagination ul.page-numbers .page-numbers,
+	.woocommerce div.product .single_add_to_cart_button.button.alt {
 		transition: none;
 	}
 }

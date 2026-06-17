@@ -44,6 +44,7 @@ class Blocks implements ModuleInterface {
 		add_action( 'init', [ $this, 'enqueue_block_specific_styles' ] );
 		add_action( 'init', [ $this, 'register_theme_blocks' ] );
 		add_action( 'init', [ $this, 'register_block_pattern_categories' ] );
+		add_action( 'init', [ $this, 'register_block_styles' ] );
 		add_filter( 'should_load_separate_core_block_assets', '__return_true' );
 
 		// Prevents third-party blocks from being suggested in the block inserter.
@@ -170,6 +171,34 @@ class Blocks implements ModuleInterface {
 				]
 			);
 		}
+	}
+
+	/**
+	 * Register custom block style variations.
+	 *
+	 * Opt-in styles selectable per-block from the editor Styles panel. The
+	 * matching CSS lives in the auto-enqueued block stylesheets under
+	 * assets/css/blocks/ and is scoped to the `is-style-{name}` class, so it
+	 * never affects other instances of the same block.
+	 *
+	 * @return void
+	 */
+	public function register_block_styles() {
+		register_block_style(
+			'core/columns',
+			[
+				'name'  => 'mobile-2-col',
+				'label' => __( 'Two columns on mobile', 'blank-brand-theme' ),
+			]
+		);
+
+		register_block_style(
+			'core/columns',
+			[
+				'name'  => 'stack-tablet',
+				'label' => __( 'Stack on tablet', 'blank-brand-theme' ),
+			]
+		);
 	}
 
 	/**

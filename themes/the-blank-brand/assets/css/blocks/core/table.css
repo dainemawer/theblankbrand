@@ -1,0 +1,30 @@
+/*
+ * Horizontally scrollable tables (mobile).
+ *
+ * Add the `has-table-scroll` class to the Group (or any ancestor) that wraps a
+ * Table block — Block settings → Advanced → Additional CSS class(es).
+ *
+ * On phones the table keeps its natural column widths and the wrapper scrolls
+ * sideways instead of cramming the columns / wrapping the data. Desktop and
+ * tablet (>=768px) are unchanged, so the default fixed layout still applies
+ * where the table already fits.
+ */
+@media (max-width: 47.999em) {
+	.has-table-scroll .wp-block-table {
+		-webkit-overflow-scrolling: touch; /* momentum scroll on iOS */
+		overflow-x: auto;
+	}
+
+	/* Override `has-fixed-layout` so columns size to their content and the
+	   table can grow wider than the viewport (triggering the scroll). */
+	.has-table-scroll .wp-block-table table {
+		min-width: 100%;
+		table-layout: auto;
+		width: auto;
+	}
+
+	.has-table-scroll .wp-block-table th,
+	.has-table-scroll .wp-block-table td {
+		white-space: nowrap;
+	}
+}

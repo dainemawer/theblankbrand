@@ -64,6 +64,7 @@
 				"xl": "52px",
 				"full": "9999px"
 			},
+			"header-height": "88px",
 			"full-viewport-width": "calc(100vw - var(--wp--custom--scrollbar-width, 0px))",
 			"main-content-width-side-spacing": "calc((var(--wp--custom--full-viewport-width) - var(--wp--style--global--content-size)) / 2)",
 			"main-wide-width-side-spacing": "calc((var(--wp--custom--full-viewport-width) - var(--wp--style--global--wide-size)) / 2)",
@@ -87,20 +88,20 @@
 				"16": "16px",
 				"24": "24px",
 				"32": "32px",
-				"40": "40px",
-				"46": "46px",
-				"48": "48px",
-				"56": "56px",
-				"62": "62px",
-				"64": "64px",
-				"72": "72px",
-				"80": "80px",
-				"96": "96px",
-				"112": "112px",
-				"120": "120px",
-				"128": "128px",
-				"144": "144px",
-				"160": "160px"
+				"40": "clamp(24px, 18.4348px + 1.7391vi, 40px)",
+				"46": "clamp(28px, 21.7391px + 1.9565vi, 46px)",
+				"48": "clamp(28px, 21.0435px + 2.1739vi, 48px)",
+				"56": "clamp(32px, 23.6522px + 2.6087vi, 56px)",
+				"62": "clamp(36px, 26.9565px + 2.8261vi, 62px)",
+				"64": "clamp(38px, 28.9565px + 2.8261vi, 64px)",
+				"72": "clamp(44px, 34.2609px + 3.0435vi, 72px)",
+				"80": "clamp(48px, 36.8696px + 3.4783vi, 80px)",
+				"96": "clamp(56px, 42.087px + 4.3478vi, 96px)",
+				"112": "clamp(64px, 47.3043px + 5.2174vi, 112px)",
+				"120": "clamp(68px, 49.913px + 5.6522vi, 120px)",
+				"128": "clamp(72px, 52.5217px + 6.087vi, 128px)",
+				"144": "clamp(80px, 57.7391px + 6.9565vi, 144px)",
+				"160": "clamp(88px, 62.9565px + 7.8261vi, 160px)"
 			}
 		},
 		"layout": {
@@ -254,7 +255,11 @@
 				{
 					"slug": "xl",
 					"size": "20px",
-					"name": "XL — 20px"
+					"name": "XL — 20px",
+					"fluid": {
+						"min": "18px",
+						"max": "20px"
+					}
 				},
 				{
 					"slug": "2xl",
@@ -269,7 +274,11 @@
 				{
 					"slug": "4xl",
 					"size": "40px",
-					"name": "4XL — 40px"
+					"name": "4XL — 40px",
+					"fluid": {
+						"min": "32px",
+						"max": "40px"
+					}
 				},
 				{
 					"slug": "5xl",
