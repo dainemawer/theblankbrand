@@ -14,6 +14,12 @@
 	margin-inline: auto;
 }
 
+/* Content containers inside <main> get horizontal padding so content never
+   touches the viewport edge. The header/footer set their own padding. */
+main .container {
+	padding-inline: 1.25rem; /* 20px — matches the header/footer container */
+}
+
 .entry-content > *,
 .wp-block-post-content > * {
 	max-width: var(--wp--style--global--content-size);

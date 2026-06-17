@@ -1,3 +1,8 @@
+.site-form {
+	/* Validation red — matches Contact Form 7's default error colour. */
+	--cf7-invalid-color: #dc3232;
+}
+
 .site-form br {
 	display: none;
 }
@@ -90,4 +95,73 @@
 
 .site-form__two-cols p {
 	width: 100%;
+}
+
+.site-form__two-cols p > label {
+	display: block;
+	width: 100%;
+}
+
+/* ==========================================================================
+   Contact Form 7
+   ========================================================================== */
+
+/* Remove the default bottom margin on form paragraphs. */
+.wpcf7-form.site-form p {
+	margin-bottom: 0;
+}
+
+/* Submit row — keep the submit button and its spinner on one line. */
+.site-form p:last-of-type {
+	align-items: center;
+	display: flex;
+	gap: var(--wp--custom--spacing--8);
+}
+
+/* The spinner is only `visibility: hidden` by default, so it still occupies
+   space. Pull it to the left with `order` so the submit button's existing
+   `margin-left: auto` can push the button flush to the right. */
+.site-form p:last-of-type .wpcf7-spinner {
+	order: -1;
+}
+
+/* Per-field validation tip injected beneath an invalid input. */
+.site-form .wpcf7-not-valid-tip {
+	color: var(--cf7-invalid-color);
+	display: block;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--xs);
+	margin-top: var(--wp--custom--spacing--4);
+}
+
+/* Invalid field — recolour the 2px border to the validation red. */
+.site-form input.wpcf7-not-valid,
+.site-form select.wpcf7-not-valid,
+.site-form textarea.wpcf7-not-valid {
+	border-color: var(--cf7-invalid-color);
+}
+
+/* Render the form as a column so the response message can be ordered to the
+   top of the form instead of its default position at the very end. */
+.wpcf7-form.site-form {
+	display: flex;
+	flex-direction: column;
+}
+
+/* Form-level response message. Black box, white text, no border — restyled to
+   match the form fields. The `.wpcf7-form.site-form` compound raises
+   specificity above Contact Form 7's own `.wpcf7 form .wpcf7-response-output`
+   rules, and `border: none` zeroes the border width so CF7's state
+   border-colors (the orange/green/red) have nothing to paint. */
+.wpcf7-form.site-form .wpcf7-response-output {
+	background: var(--wp--preset--color--tertiary);
+	border: none;
+	color: var(--wp--preset--color--primary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	letter-spacing: 0.05em;
+	line-height: 1.4;
+	margin: 0 0 var(--wp--custom--spacing--16);
+	order: -1; /* move above the fields (visual order; CF7 uses aria-live) */
+	padding: 16px 20px;
 }

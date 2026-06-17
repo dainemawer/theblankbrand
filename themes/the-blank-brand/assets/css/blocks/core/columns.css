@@ -1,0 +1,42 @@
+/*
+ * core/columns — "Two columns on mobile" block style.
+ *
+ * By default WordPress collapses a Columns block to a single full-width
+ * column below 782px (via `flex-basis: 100% !important` on each column).
+ * This opt-in variation — applied per-block from the editor Styles panel —
+ * instead lays the columns out as a 2-up grid on mobile.
+ *
+ * Scoped to the `.is-style-mobile-2-col` class so no other Columns block is
+ * affected. Switching the container to grid makes the core mobile
+ * `flex-basis` rule (and any per-column width) inert, giving two equal
+ * columns regardless of how many columns the block contains.
+ */
+@media (max-width: 781px) {
+	.wp-block-columns.is-style-mobile-2-col {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+/*
+ * core/columns — "Stack on tablet" block style.
+ *
+ * Collapses the columns to a single stacked column from the tablet breakpoint
+ * down (below 64em) instead of WordPress's default ~782px, where the
+ * side-by-side layout looks cramped. While stacked, a right-aligned heading is
+ * pulled back to the left (it reads oddly pushed to the right in the narrow
+ * column). Desktop (>=64em) keeps the side-by-side columns untouched.
+ *
+ * `flex-direction: column` forces the stack regardless of core's flex-basis /
+ * flex-wrap rules without a specificity fight (core never sets flex-direction).
+ */
+@media (max-width: 63.999em) {
+	.wp-block-columns.is-style-stack-tablet {
+		flex-direction: column;
+	}
+
+	/* Beats core's `.has-text-align-right { text-align: right !important }`. */
+	.wp-block-columns.is-style-stack-tablet .has-text-align-right {
+		text-align: left !important;
+	}
+}
