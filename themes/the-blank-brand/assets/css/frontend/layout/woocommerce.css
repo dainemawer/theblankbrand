@@ -182,44 +182,59 @@
 	}
 }
 
-/* Per-colour gallery: a large main image with a grid of same-ratio thumbnails
-   below it. The theme ships no gallery slider, so images render stacked; this
-   lays them out and keeps thumbnails on the product portrait ratio (not the
-   square crop WooCommerce would otherwise clip them to). */
+/* Per-colour gallery: a fixed main preview with a strip of same-ratio
+   thumbnails below it. The theme ships no gallery slider — clicking a thumbnail
+   just swaps the image shown in the main preview (colour-swatches.js); every
+   image stays rendered and nothing is reordered. Thumbnails keep the product
+   portrait ratio (not the square crop WooCommerce would otherwise clip to). */
 .woocommerce div.product .woocommerce-product-gallery__wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--custom--spacing--12);
+}
+
+/* Main preview spans the full gallery width. */
+.woocommerce div.product .woocommerce-product-gallery__image--main {
+	width: 100%;
+}
+
+.woocommerce div.product .woocommerce-product-gallery__image--main a {
+	display: block;
+}
+
+/* Lock every gallery image to one portrait ratio so swapping the main preview
+   never changes its height. A shorter ratio than the source crop (300/533)
+   keeps the main image + thumbnails above the fold. */
+.woocommerce div.product .woocommerce-product-gallery__image img {
+	aspect-ratio: 3 / 4;
+	display: block;
+	height: auto;
+	object-fit: contain;
+	width: 100%;
+}
+
+/* Thumbnail strip — four per row, stacked left. Subtract 3/4 of the gap so four
+   25% items fit on a line with gaps between. */
+.woocommerce div.product .woocommerce-product-gallery__thumbs {
 	display: flex;
 	flex-wrap: wrap;
 	gap: var(--wp--custom--spacing--12);
 }
 
-/* Main image spans the full gallery width. */
-.woocommerce div.product .woocommerce-product-gallery__image:first-child {
-	flex: 0 0 100%;
-}
-
-.woocommerce div.product .woocommerce-product-gallery__image a {
-	display: block;
-}
-
-/* Lock every gallery image to one portrait ratio so promoting a thumbnail into
-   the main slot never changes the main image's height. A shorter ratio than the
-   source crop (300/533) keeps the featured image + thumbnails above the fold. */
-.woocommerce div.product .woocommerce-product-gallery__image img {
-	aspect-ratio: 3 / 4;
-	display: block;
-	height: auto;
-	object-fit: cover;
-	width: 100%;
-}
-
-/* Thumbnails (everything after the main image) — four per row, stacked left.
-   Subtract 3/4 of the gap so four 25% items fit on a line with gaps between. */
-.woocommerce div.product .woocommerce-product-gallery__image:nth-child(n+2) {
+/* Thumbnails are buttons that drive the main preview — reset native chrome. */
+.woocommerce div.product .woocommerce-product-gallery__thumbs .woocommerce-product-gallery__image {
 	flex: 0 0 calc(25% - (var(--wp--custom--spacing--12) * 3 / 4));
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: pointer;
 }
 
-.woocommerce div.product .woocommerce-product-gallery__image:nth-child(n+2) img {
-	cursor: pointer;
+/* Highlight the thumbnail currently shown in the main preview. */
+.woocommerce div.product .woocommerce-product-gallery__thumbs .woocommerce-product-gallery__image.is-active {
+	outline: 2px solid var(--wp--preset--color--primary);
+	outline-offset: 2px;
 }
 
 /* Product title — fluid up to 50px, uppercase. */
@@ -244,6 +259,49 @@
 	margin-top: var(--wp--custom--spacing--24);
 }
 
+/* Bulk discounts accordion — sits directly under the description, expanded
+   by default via the [open] attribute set in markup. */
+.woocommerce div.product .tbb-bulk-discounts {
+	margin-bottom: var(--wp--custom--spacing--24);
+}
+
+.woocommerce div.product .tbb-bulk-discounts__toggle {
+	align-items: center;
+	color: var(--wp--preset--color--tertiary);
+	cursor: pointer;
+	display: flex;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--md);
+	font-weight: 600;
+	gap: var(--wp--custom--spacing--8);
+	justify-content: flex-start;
+	letter-spacing: 0.02em;
+	list-style: none;
+}
+
+.woocommerce div.product .tbb-bulk-discounts__toggle::-webkit-details-marker {
+	display: none;
+}
+
+.woocommerce div.product .tbb-bulk-discounts__toggle:focus-visible {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 4px;
+}
+
+.woocommerce div.product .tbb-bulk-discounts__icon {
+	flex-shrink: 0;
+	transition: transform 0.2s ease;
+}
+
+.woocommerce div.product .tbb-bulk-discounts[open] > .tbb-bulk-discounts__toggle .tbb-bulk-discounts__icon {
+	transform: rotate(180deg);
+}
+
+.woocommerce div.product .tbb-bulk-discounts__content {
+	font-family: var(--wp--preset--font-family--asap);
+	margin-top: var(--wp--custom--spacing--16);
+}
+
 /* Related / up-sell sections must clear the floated gallery + summary so they
    sit below them, not wrapped alongside. */
 .woocommerce div.product .related,
@@ -260,6 +318,7 @@
 /* Price amount (the value inside the bdi). */
 .woocommerce div.product .summary .woocommerce-Price-amount {
 	color: var(--wp--preset--color--muted);
+	font-size: 1.5rem;
 }
 
 /* Add to cart — black, uppercase, fully rounded pill. */

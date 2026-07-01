@@ -1,8 +1,9 @@
 /**
  * Colour swatches.
  *
- * - Single product: clicking a chip fade-swaps the whole gallery (main +
- *   thumbnails) to that colour's images.
+ * - Single product: clicking a chip fade-swaps the whole gallery (main preview +
+ *   thumbnail strip) to that colour's images. Clicking a thumbnail then just
+ *   swaps the larger image shown in the fixed main preview.
  * - Category grid: clicking a chip swaps that card's image.
  * - Barn2 grid: selecting a colour in the bulk-variations grid triggers the
  *   same gallery swap (best-effort, by matching the colour slug).
@@ -18,7 +19,7 @@
 	/**
 	 * Fade-swap the single-product gallery to new markup.
 	 *
-	 * @param {string} html Pre-rendered `.woocommerce-product-gallery__image` markup.
+	 * @param {string} html Pre-rendered gallery markup (main preview + thumbnail strip).
 	 */
 	function swapGallery(html) {
 		var $gallery = $('.woocommerce-product-gallery');
@@ -226,21 +227,45 @@
 		}
 	});
 
-	// Single product (no slider): clicking a gallery thumbnail promotes it to the
-	// main image slot. We move the whole `__image` element (image + full-size
-	// link) to the front of the wrapper, so the CSS :first-child styles take over.
+	// Single product (no slider): clicking a gallery thumbnail swaps it into the
+	// fixed main preview. Every colour image stays rendered as a thumbnail — we
+	// only change the main image's source, never the DOM order.
 	document.addEventListener('click', function (e) {
-		var image = e.target.closest('.woocommerce-product-gallery__image');
-		if (!image) {
+		var thumb = e.target.closest('.woocommerce-product-gallery__thumbs .woocommerce-product-gallery__image');
+		if (!thumb) {
 			return;
 		}
-		var wrapper = image.closest('.woocommerce-product-gallery__wrapper');
-		if (!wrapper || image === wrapper.firstElementChild) {
-			return;
-		}
-		// Stop the <a href="full-image"> from navigating away.
 		e.preventDefault();
-		wrapper.insertBefore(image, wrapper.firstElementChild);
+		var wrapper = thumb.closest('.woocommerce-product-gallery__wrapper');
+		var main = wrapper && wrapper.querySelector('.woocommerce-product-gallery__image--main');
+		var img = main && main.querySelector('img');
+		if (!img) {
+			return;
+		}
+
+		var src = thumb.getAttribute('data-main-src');
+		if (src) {
+			img.src = src;
+		}
+		var srcset = thumb.getAttribute('data-main-srcset');
+		if (srcset) {
+			img.srcset = srcset;
+		} else {
+			img.removeAttribute('srcset');
+		}
+		var thumbImg = thumb.querySelector('img');
+		img.alt = thumbImg ? thumbImg.alt || '' : '';
+
+		var link = main.querySelector('a');
+		var href = thumb.getAttribute('data-main-href');
+		if (link && href) {
+			link.href = href;
+		}
+
+		// Highlight the active thumbnail within this strip.
+		thumb.parentNode.querySelectorAll('.woocommerce-product-gallery__image').forEach(function (el) {
+			el.classList.toggle('is-active', el === thumb);
+		});
 	});
 
 	// Barn2 bulk-variations grid: when a colour is chosen in the grid, mirror it

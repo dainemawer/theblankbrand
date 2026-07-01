@@ -53,8 +53,9 @@ class ColourSwatches implements ModuleInterface {
 		// every variation image into the gallery.
 		add_filter( 'wc_bulk_variations_add_images_to_gallery', '__return_false' );
 
-		// Single product: chips under the short description.
-		add_action( 'woocommerce_single_product_summary', [ $this, 'render_single_chips' ], 25 );
+		// Single product: chips under the price + bulk-discounts accordion (27:
+		// price is 25, BulkDiscounts::render() is 26).
+		add_action( 'woocommerce_single_product_summary', [ $this, 'render_single_chips' ], 27 );
 
 		// Category grid: drop the "Select options" / add-to-cart button on cards…
 		remove_action( 'woocommerce_after_shop_loop_item', 'woocommerce_template_loop_add_to_cart', 10 );
@@ -229,19 +230,32 @@ class ColourSwatches implements ModuleInterface {
 			];
 
 			if ( $ids && $with_gallery ) {
-				// WooCommerce renders non-main gallery images at the square
-				// `gallery_thumbnail` size (clipped). Force the portrait crop used
-				// elsewhere on the site so the thumbnails match the main image.
-				$portrait_thumb = static fn() => 'woocommerce_thumbnail';
-				add_filter( 'woocommerce_gallery_thumbnail_size', $portrait_thumb );
+				// A fixed main preview plus a strip of *every* colour image as a
+				// same-ratio thumbnail. Clicking a thumbnail only swaps the main
+				// preview's source (see colour-swatches.js) — we never reorder or
+				// replace nodes, so all of a colour's images stay rendered.
+				$main_alt = trim( wp_strip_all_tags( (string) get_post_meta( $ids[0], '_wp_attachment_image_alt', true ) ) );
+				$main     = sprintf(
+					'<div class="woocommerce-product-gallery__image woocommerce-product-gallery__image--main"><a href="%1$s"><img src="%2$s" srcset="%3$s" alt="%4$s" /></a></div>',
+					esc_url( (string) wp_get_attachment_image_url( $ids[0], 'full' ) ),
+					esc_url( (string) wp_get_attachment_image_url( $ids[0], 'woocommerce_single' ) ),
+					esc_attr( wp_get_attachment_image_srcset( $ids[0], 'woocommerce_single' ) ?: '' ),
+					esc_attr( $main_alt )
+				);
 
-				$html = '';
+				$thumbs = '';
 				foreach ( $ids as $i => $id ) {
-					$html .= wc_get_gallery_image_html( $id, 0 === $i );
+					$thumbs .= sprintf(
+						'<button type="button" class="woocommerce-product-gallery__image%1$s" data-main-src="%2$s" data-main-srcset="%3$s" data-main-href="%4$s">%5$s</button>',
+						0 === $i ? ' is-active' : '',
+						esc_url( (string) wp_get_attachment_image_url( $id, 'woocommerce_single' ) ),
+						esc_attr( wp_get_attachment_image_srcset( $id, 'woocommerce_single' ) ?: '' ),
+						esc_url( (string) wp_get_attachment_image_url( $id, 'full' ) ),
+						wp_get_attachment_image( $id, 'woocommerce_thumbnail' )
+					);
 				}
-				$entry['gallery'] = $html;
 
-				remove_filter( 'woocommerce_gallery_thumbnail_size', $portrait_thumb );
+				$entry['gallery'] = $main . '<div class="woocommerce-product-gallery__thumbs">' . $thumbs . '</div>';
 			}
 			if ( $ids && ! $with_gallery ) {
 				$entry['img']    = wp_get_attachment_image_url( $ids[0], 'woocommerce_thumbnail' );
