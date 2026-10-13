@@ -104,6 +104,62 @@ class ColourSwatches implements ModuleInterface {
 	}
 
 	/**
+	 * Per-product cache of {@see in_stock_combinations()}, for the request.
+	 *
+	 * @var array<int,array<int,array{colour:string,size:string}>>
+	 */
+	protected $stock_combinations = [];
+
+	/**
+	 * Every in-stock, purchasable colour and size pairing of a variable product.
+	 *
+	 * The one place the swatches ask "what can actually be bought". It used to
+	 * be answered with get_available_variations(), which builds a full payload
+	 * (images, price markup, dimensions) for every variation, on every product
+	 * card of an archive page, and twice on a single product page because the
+	 * stock matrix and the colour map each asked for themselves. Stock and
+	 * attributes are all that is wanted, so they are read from the variation
+	 * objects directly and the answer is kept for the rest of the request.
+	 *
+	 * A variation with an empty colour or size ("Any") is returned with an empty
+	 * string there, and applies to all of that attribute's terms.
+	 *
+	 * @param \WC_Product|false $product Product.
+	 * @return array<int,array{colour:string,size:string}>
+	 */
+	protected function in_stock_combinations( $product ) {
+		if ( ! $product instanceof \WC_Product || ! $product->is_type( 'variable' ) ) {
+			return [];
+		}
+
+		$id = $product->get_id();
+
+		if ( isset( $this->stock_combinations[ $id ] ) ) {
+			return $this->stock_combinations[ $id ];
+		}
+
+		$combinations = [];
+
+		foreach ( $product->get_children() as $variation_id ) {
+			$variation = wc_get_product( $variation_id );
+
+			if ( ! $variation instanceof \WC_Product_Variation || ! $variation->is_in_stock() || ! $variation->is_purchasable() ) {
+				continue;
+			}
+
+			$attributes     = $variation->get_variation_attributes();
+			$combinations[] = [
+				'colour' => (string) ( $attributes['attribute_pa_colour'] ?? '' ),
+				'size'   => (string) ( $attributes['attribute_pa_size'] ?? '' ),
+			];
+		}
+
+		$this->stock_combinations[ $id ] = $combinations;
+
+		return $combinations;
+	}
+
+	/**
 	 * Build a `{ colourSlug: { sizeSlug: true } }` map of in-stock, purchasable
 	 * colour×size combinations for a variable product. Only in-stock combos are
 	 * listed; every product colour gets an entry (empty if none of its sizes are
@@ -135,16 +191,9 @@ class ColourSwatches implements ModuleInterface {
 			$matrix[ $colour ] = [];
 		}
 
-		foreach ( $product->get_available_variations() as $variation ) {
-			$in_stock = ! empty( $variation['is_in_stock'] ) && ! empty( $variation['is_purchasable'] );
-			if ( ! $in_stock ) {
-				continue;
-			}
-			$v_colour = $variation['attributes']['attribute_pa_colour'] ?? '';
-			$v_size   = $variation['attributes']['attribute_pa_size'] ?? '';
-
-			$v_colours = '' !== $v_colour ? [ $v_colour ] : $colours;
-			$v_sizes   = '' !== $v_size ? [ $v_size ] : $sizes;
+		foreach ( $this->in_stock_combinations( $product ) as $combination ) {
+			$v_colours = '' !== $combination['colour'] ? [ $combination['colour'] ] : $colours;
+			$v_sizes   = '' !== $combination['size'] ? [ $combination['size'] ] : $sizes;
 
 			foreach ( $v_colours as $colour ) {
 				foreach ( $v_sizes as $size ) {
@@ -154,6 +203,39 @@ class ColourSwatches implements ModuleInterface {
 		}
 
 		return $matrix;
+	}
+
+	/**
+	 * Which colours have at least one in-stock, purchasable variation.
+	 *
+	 * Collapses {@see in_stock_combinations()} to a single colour => bool map,
+	 * since chip visibility only cares whether a colour is orderable in *any*
+	 * size, not which ones.
+	 *
+	 * @param \WC_Product|false $product Product.
+	 * @return array<string,bool> colour slug => has stock. Empty for non-variable products.
+	 */
+	protected function colours_with_stock( $product ) {
+		if ( ! $product instanceof \WC_Product || ! $product->is_type( 'variable' ) ) {
+			return [];
+		}
+
+		$colours = wc_get_product_terms( $product->get_id(), 'pa_colour', [ 'fields' => 'slugs' ] );
+		if ( ! $colours ) {
+			return [];
+		}
+
+		$map = array_fill_keys( $colours, false );
+
+		foreach ( $this->in_stock_combinations( $product ) as $combination ) {
+			$v_colours = '' !== $combination['colour'] ? [ $combination['colour'] ] : $colours;
+
+			foreach ( $v_colours as $colour ) {
+				$map[ $colour ] = true;
+			}
+		}
+
+		return $map;
 	}
 
 	/**
@@ -209,9 +291,17 @@ class ColourSwatches implements ModuleInterface {
 		// from WooCommerce's per-variation images with no manual mapping.
 		$variation_thumbs = $this->variation_colour_thumbs( $product );
 
+		// A colour with zero in-stock, purchasable sizes shouldn't appear as a
+		// pickable chip at all — showing it would let a customer "choose" a
+		// colour that can't actually be ordered in anything.
+		$colours_in_stock = $this->colours_with_stock( $product );
+
 		$out = [];
 
 		foreach ( $terms as $term ) {
+			if ( $colours_in_stock && empty( $colours_in_stock[ $term->slug ] ) ) {
+				continue;
+			}
 			$ids = isset( $map[ $term->term_id ] ) ? array_map( 'intval', (array) $map[ $term->term_id ] ) : [];
 			$ids = array_values( array_filter( $ids, fn( $id ) => 'attachment' === get_post_type( $id ) ) );
 
@@ -336,16 +426,6 @@ class ColourSwatches implements ModuleInterface {
 			);
 		}
 		echo '</div>';
-	}
-
-	/**
-	 * Single product: chips under the gallery.
-	 *
-	 * @return void
-	 */
-	public function render_single_strip() {
-		global $product;
-		$this->render_chips( $this->get_colours( $product, true ), 'strip', __( 'Choose a colour', 'blank-brand-theme' ) );
 	}
 
 	/**

@@ -302,6 +302,18 @@
 	margin-top: var(--wp--custom--spacing--16);
 }
 
+/* The theme's default link colour (--wp--preset--color--primary) is white,
+   intended for dark backgrounds — invisible against this light accordion
+   content, so it needs its own colour here. */
+.woocommerce div.product .tbb-bulk-discounts__content a {
+	color: var(--wp--preset--color--tertiary);
+}
+
+.woocommerce div.product .tbb-bulk-discounts__content a:hover,
+.woocommerce div.product .tbb-bulk-discounts__content a:focus-visible {
+	color: var(--wp--preset--color--muted);
+}
+
 /* Related / up-sell sections must clear the floated gallery + summary so they
    sit below them, not wrapped alongside. */
 .woocommerce div.product .related,
@@ -595,9 +607,15 @@
 	color: var(--wp--preset--color--primary);
 }
 
-/* Prices render at regular weight, not bold. */
+/* Per-cell price is hidden — stock (once Zoho sync provides it) belongs here
+   instead, not price. See .wcbvp-cell .stock below for the replacement. */
 .product-table-modal__body .wc-bulk-variations-table .price {
-	font-weight: 400;
+	display: none;
+}
+
+.product-table-modal__body .wc-bulk-variations-table .stock {
+	color: var(--wp--preset--color--muted);
+	font-size: var(--wp--preset--font-size--sm);
 }
 
 /* Rule directly beneath the "View Bulk Order Grid" trigger. */
@@ -634,6 +652,12 @@
 
 .product-table-modal__foot .wcbvp-total-left p {
 	margin: 0;
+}
+
+/* "Items" and "Total" say the same thing twice — Total (what the customer
+   actually pays) is the one that matters, so the Items count is redundant. */
+.product-table-modal__foot .wcbvp-total-left p:first-child {
+	display: none;
 }
 
 /* The plugin renders the same items/total twice: the visible "Items / Total"
@@ -684,10 +708,21 @@
 	justify-content: space-between;
 }
 
-/* The leading icon is an absolutely positioned ::before with a fixed top, so it
-   no longer lines up once the text is vertically centred — pin it to the
-   middle. */
-.woocommerce-notices-wrapper .woocommerce-message::before,
+/* Success notices carry no leading icon. WooCommerce paints one with an
+   absolutely positioned ::before, and adds a clearfix ::after. Inside the flex
+   layout above the clearfix becomes a flex item of its own and takes up a gap's
+   worth of space, which is what pushed the text and button out of line. Neither
+   pseudo-element does anything useful here, so both are removed. The `body` prefix keeps this ahead of WooCommerce's own
+   rule whichever stylesheet loads last. */
+body .woocommerce-message::before,
+body .woocommerce-message::after {
+	content: none;
+	display: none;
+}
+
+/* Info and error notices keep their icon. It is an absolutely positioned
+   ::before with a fixed top, so it no longer lines up once the text is
+   vertically centred — pin it to the middle. */
 .woocommerce-notices-wrapper .woocommerce-info::before,
 .woocommerce-notices-wrapper .woocommerce-error::before {
 	top: 50%;

@@ -230,6 +230,22 @@ body.admin-bar .site-header {
 	padding-inline: 4px;
 }
 
+/* The badge carries "item in cart" for screen readers. Styled here rather than
+   borrowed from the swatch stylesheet, which only loads on product pages while
+   the header is on every page. */
+.site-header__cart-count .screen-reader-text {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal;
+}
+
 /* Minicart panel */
 
 .site-header__minicart {
