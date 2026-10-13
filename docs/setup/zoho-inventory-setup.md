@@ -1,29 +1,51 @@
 # Setup: Zoho Inventory Integration
 
-**Status:** Code complete, pending Zoho credentials
+**Status:** Exercised end to end against the live Zoho organisation (October 2026). Dry run is on by default.
 **Owner:** Daine Mawer
-**Last updated:** 2026-07-01
-**Affected area:** `themes/the-blank-brand/src/Zoho/`
+**Last updated:** 2026-10-13
+**Affected area:** `mu-plugins/tbb-zoho/` (a must-use plugin; it no longer lives in the theme)
 
 ---
 
-## 1. What's already built
+## 1. What's built
 
-Zoho Inventory becomes the source of truth for stock. On payment completion,
-WooCommerce pushes a Sales Order to Zoho and emails the warehouse the
-pick/pack details; stock changes in Zoho flow back to WooCommerce via
-webhook (with a polling reconciliation job as a backstop).
+Zoho Inventory is the source of truth for **stock and price**. WooCommerce
+reads both and never writes either back. A paid order goes the other way: it
+becomes a **confirmed Sales Order** in Zoho, and the warehouse is emailed the
+pick/pack details.
+
+Three rules the code is built around:
+
+- **WooCommerce drives.** The sync walks the WooCommerce catalogue and asks Zoho
+  about each SKU. A Zoho item with no website SKU is ignored, because Zoho
+  carries items the shop does not sell.
+- **Stock means `available_for_sale`, never `stock_on_hand`.** Zoho reserves
+  stock against confirmed sales orders. Stock on hand still counts units already
+  committed to someone else, and publishing it is how the site came to offer
+  units it could not supply.
+- **Zoho is never written to for stock or price.** This is enforced in three
+  places: an allow-list in the client, the absence of `items.UPDATE` from the
+  token's grant, and the webhook treating its payload as a notification rather
+  than data.
 
 | File | Purpose |
 |---|---|
-| `src/Zoho/Settings.php` | Settings → Zoho Inventory admin page (credentials, toggle, test-connection button). |
-| `src/Zoho/Client.php` | OAuth token handling + thin API wrapper (contacts, sales orders, items). |
-| `src/Zoho/OrderSync.php` | On `woocommerce_payment_complete`: creates the Zoho Sales Order and emails the warehouse, as two independent, retrying Action Scheduler jobs. |
-| `src/Zoho/StockWebhook.php` | `POST /wp-json/tbb/v1/zoho-stock` — applies an incoming stock change to the matching product by SKU. |
-| `src/Zoho/StockSync.php` | Recurring 30-minute job that re-pulls all Zoho stock as a safety net. |
+| `src/Settings.php` | Settings → Zoho Inventory admin page (credentials, dry-run toggle, test-connection button). |
+| `src/Client.php` | OAuth token handling (a rejected token is replaced and retried once; a failed refresh backs off for a minute), the write allow-list, and dry-run interception. |
+| `src/StockSync.php` | Every 10 minutes: reconciles stock, price and the 50+ bulk tier for every SKU the shop sells. |
+| `src/StockWebhook.php` | `POST /wp-json/tbb/v1/zoho-stock`. Validates the SKU, queues one de-duplicated job and answers `202`. See §5. |
+| `src/OrderSync.php` | On `woocommerce_payment_complete`: two independent, retrying Action Scheduler jobs. One creates the contact and the confirmed Sales Order in Zoho, the other emails the warehouse. |
+| `src/Mail.php` | One sender (`noreply@`) for everything the shop sends, with replies and the "contact us" line pointed at the support address. |
+| `src/StatusReport.php` | WooCommerce → Status → Zoho Sync: last run, counts, unmatched SKUs, whether writes are live, and any orders that were only simulated. |
 
-All of it is inert until the settings page is filled in and "Enable sync" is
-checked — nothing runs against production until you switch it on.
+**Dry run is on until you turn it off.** While it is on, nothing is written to
+Zoho: each write is recorded and answered with a made-up id so the whole
+sequence still runs. An order that goes through a dry run gets the note
+`SIMULATED … this order is not in Zoho` and is listed on the status screen. It is
+never marked synced, because it is not in Zoho.
+
+Everything is inert until the settings page is filled in and "Enable sync" is
+checked.
 
 ## 2. Get Zoho API access
 
@@ -31,11 +53,18 @@ checked — nothing runs against production until you switch it on.
    account that owns the Zoho Inventory organisation).
 2. Create a **Self Client**.
 3. Generate a grant token with these scopes:
-   - `ZohoInventory.salesorders.CREATE`
+   - `ZohoInventory.salesorders.CREATE` (creates the order and confirms it)
    - `ZohoInventory.contacts.CREATE`
    - `ZohoInventory.contacts.READ`
    - `ZohoInventory.items.READ`
-   - `ZohoInventory.organizations.READ` (used by the "Test connection" button)
+   - `ZohoInventory.settings.READ` (covers organization info — used by the
+     "Test connection" button; there is no separate `organizations.*` scope)
+
+   **Do not** grant `ZohoInventory.items.UPDATE`. Its absence is what stops the
+   site writing stock or price to Zoho even if the in-code guard were bypassed.
+   Scopes beyond the five above are unused. The token also cannot delete, so
+   any sales order or contact created during testing has to be removed by hand
+   in Zoho.
 4. Exchange the grant token for a **refresh token** (one-time call):
    ```
    curl -X POST https://accounts.zoho.<dc>/oauth/v2/token \
@@ -81,26 +110,32 @@ test sales orders and stock changes fully isolated from production.
 > staging or production. Order sync and the "Test connection" button work
 > fine locally since they're outbound calls.
 
-## 5. Point Zoho at the stock webhook
+## 5. Point Zoho at the stock webhook (optional)
 
-1. In Zoho Inventory: **Automation → Workflow Rules** → create a rule on the
-   Item module, triggered on stock changes.
-2. Action: **Send webhook** (or "Custom function" invoking a webhook), method
-   `POST`, URL = the webhook URL from step 4.
-3. Set a custom JSON payload so the field names match what
-   `StockWebhook::handle()` expects:
+The webhook is a speed-up, not a requirement. The ten-minute reconcile in §1
+does the same job, so a missed notification costs a delay and nothing else.
+Note also that a rule on the Item module fires when an *item* is edited, so it
+will not fire when an order reserves stock, which is the case that matters most.
+That case still waits for the reconcile.
+
+1. In Zoho Inventory: **Settings → Automation → Webhooks** → create a webhook
+   (`POST`, URL = the webhook URL from step 4), then **Workflow Rules** → a rule
+   on the Item module, "Edited each time", with that webhook as its action.
+2. Send only the SKU:
    ```json
-   { "sku": "${item.sku}", "stock_on_hand": "${item.stock_on_hand}" }
+   { "sku": "${item.sku}" }
    ```
-4. Add the shared secret as a header: `X-Zoho-Webhook-Secret: <secret>`
-   (or append `?secret=<secret>` to the URL if the workflow rule only
-   supports plain URLs).
+   A quantity in the body is ignored. Zoho's payload offers `stock_on_hand`,
+   which counts units already reserved against open orders, so the site fetches
+   the figure itself and publishes `available_for_sale`.
+3. Add the shared secret as a header: `X-Zoho-Webhook-Secret: <secret>`
+   (or append `?secret=<secret>` to the URL if the workflow rule only supports
+   plain URLs, bearing in mind the secret then appears in server logs).
 
-If Zoho's actual field placeholders differ from the above (worth confirming
-once you're in the workflow rule builder — the exact token names vary by
-Zoho product version), adjust either the JSON template in Zoho or the field
-names read in `StockWebhook::handle()` to match — whichever is less friction
-at the time.
+The route answers `202` straight away and queues a job. Several notifications
+for one SKU collapse into a single job, and a bulk edit in Zoho cannot tie up
+the site's workers. Whether Zoho's workflow actually calls the route, and what
+its custom headers allow, can only be tested against a publicly reachable URL.
 
 ## 6. End-to-end test (on staging/production, against the test org)
 
@@ -180,17 +215,54 @@ confirm the PIN/OTP step doesn't break the popup/redirect flow.
 
 ### 6.5 Confirm the Zoho + warehouse side effects
 
-1. Within a minute or two of the order reaching **Processing**, check:
-   - The order note **"Synced to Zoho Inventory as Sales Order #…"** appears.
-   - A matching Sales Order exists in the test Zoho org.
-   - The warehouse inbox (test address from §4) received the pick/pack
-     email.
-2. If either is missing, check **WooCommerce → Status → Logs** (source
-   `zoho`) and **Tools → Scheduled Actions** (group `zoho`) — see §8.
-3. In the test Zoho org, manually adjust that item's stock and confirm the
-   change lands on the WooCommerce product within a minute (webhook) — or
-   within 30 minutes even if the webhook is misconfigured (reconciliation
-   job backstop).
+1. Within a minute or two of the order reaching **Processing**, open the order
+   and read the **Order notes**:
+   - **`Synced to Zoho Inventory as Sales Order #…`** means a confirmed Sales
+     Order exists in Zoho. A real id starts with your organisation's prefix; a
+     simulated one starts `9000`. The note only appears after the confirm call
+     succeeds, so it means a real sync and nothing else.
+   - **`SIMULATED: dry run is on …`** means nothing was sent. That is correct
+     while testing and wrong once the site is live.
+   - **`Not sent to Zoho — <sku> is not in Zoho …`** means a line could not be
+     matched to a Zoho item. The whole order is held back rather than sent with
+     a line missing, and no retry is queued, since retrying cannot make the item
+     exist.
+2. In Zoho, the Sales Order carries the WooCommerce order number as its
+   reference, with one line per item (sent by Zoho `item_id`, resolved from the
+   SKU) and the status **Confirmed**, not Draft. The customer exists as a
+   contact with their email on a contact person.
+3. The warehouse inbox received the pick/pack email, in the shop's branded
+   email layout and with no prices.
+4. A failed attempt leaves no note at all, only a retry five minutes later, so
+   if nothing appears check **WooCommerce → Status → Logs** (source `zoho`) and
+   **Tools → Scheduled Actions** (group `zoho`) — see §8.
+5. Confirm the reservation: the item's available quantity in Zoho drops by the
+   amount ordered, and the website's figure follows on the next reconcile.
+
+## 7. Go live
+
+1. Repeat step 2's grant-token exchange scoped to the **production** Zoho
+   Inventory organisation (or reuse the same Self Client if it already
+   covers it) to get a production refresh token.
+2. In **Settings → Zoho Inventory**, swap the Organization ID and refresh
+   token for the production values, and set the warehouse email to the real
+   address.
+3. Re-run **Test connection** to confirm it now resolves to the production
+   organisation name (not the test one) before leaving the page.
+4. Switch Paystack to live keys, and allow search engines again.
+5. **Turn dry run off.** Until you do, no order reaches Zoho.
+6. Send any orders that were only simulated while testing:
+   ```bash
+   wp eval 'echo TBB\Zoho\OrderSync::requeue_simulated(), " order(s) queued\n";'
+   wp action-scheduler run --group=zoho
+   ```
+7. Re-point the Zoho workflow rule at the same webhook URL/secret, if you use
+   one. No change is needed there, since the site side didn't move.
+
+Two things are still decisions, not code: whether a web order should raise an
+invoice and record the payment in Zoho (none is raised today), and how VAT is
+handled, since Zoho adds its default rate to a sales order line while
+WooCommerce tax is switched off.
 
 ## 7. Go live
 
@@ -207,12 +279,19 @@ confirm the PIN/OTP step doesn't break the popup/redirect flow.
 
 ## 8. Where to look when something breaks
 
+- **WooCommerce → Status → Zoho Sync** — when the sync last ran, whether it
+  failed (the last good run's figures stay below the failure, labelled as that
+  run's), whether writes are live or simulated, unmatched SKUs, and any orders
+  that never reached Zoho.
 - **WooCommerce → Status → Logs**, source `zoho` — every API/email failure
   is logged here with the order id and stage.
 - **Tools → Scheduled Actions** — filter by group `zoho` to see pending,
   running, and failed sync/notification/reconciliation jobs. Failed order
   jobs auto-retry up to 5 times with backoff before giving up (the order
-  gets a note when that happens).
+  gets a note saying it needs manual follow-up when that happens).
 - An order stuck unsynced with no log entry usually means "Enable sync" is
   off, or a credential is missing — `OrderSync` won't even register hooks
   in that case.
+- The stock sync cannot run on a site that WordPress cron never reaches. If the
+  reconcile has not run for hours, check the site is not behind an HTTP password
+  that answers before WordPress does.
