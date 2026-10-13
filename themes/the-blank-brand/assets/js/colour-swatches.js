@@ -113,11 +113,27 @@
 		if (!slug) {
 			return;
 		}
-		var $select = $('form.variations_form select[name="attribute_pa_colour"]');
-		if ($select.length && $select.val() !== slug) {
-			$select.val(slug).trigger('change');
+		var $colourSelect = $('form.variations_form select[name="attribute_pa_colour"]');
+		if (!$colourSelect.length || $colourSelect.val() === slug) {
+			updateSizeAvailability(slug);
+			return;
 		}
-		// Available sizes depend on the chosen colour.
+
+		// WooCommerce's own variation script re-validates the *changed* select's
+		// value against whatever the other select currently holds, and silently
+		// resets it back to blank if that pairing doesn't match a variation. So
+		// switching colour while an old, now-invalid size is still selected keeps
+		// bouncing the colour (or size) back to blank instead of settling — the
+		// size and SKU never resolve. Neutralising size first means the colour
+		// change below is only ever checked against a wildcard, never a stale
+		// value, so it always sticks; the size is then resolved fresh for the
+		// new colour once it's already settled.
+		var $sizeSelect = $('form.variations_form select[name="attribute_pa_size"]');
+		if ($sizeSelect.length && $sizeSelect.val() !== '') {
+			$sizeSelect.val('').trigger('change');
+		}
+
+		$colourSelect.val(slug).trigger('change');
 		updateSizeAvailability(slug);
 	}
 
@@ -133,7 +149,6 @@
 			return;
 		}
 		var avail = window.tbbSizeStock[colourSlug];
-		var clearedActive = false;
 		document.querySelectorAll('.tbb-size').forEach(function (pill) {
 			var size = pill.getAttribute('data-value');
 			// No data for this colour → leave enabled; otherwise require an in-stock combo.
@@ -141,21 +156,26 @@
 			pill.disabled = !ok;
 			pill.classList.toggle('tbb-size--disabled', !ok);
 			pill.setAttribute('aria-disabled', ok ? 'false' : 'true');
-			if (!ok && pill.classList.contains('is-active')) {
-				pill.classList.remove('is-active');
-				pill.setAttribute('aria-checked', 'false');
-				clearedActive = true;
-			}
 		});
-		if (clearedActive) {
-			var $size = $('form.variations_form select[name="attribute_pa_size"]');
-			if ($size.length) {
-				$size.val('').trigger('change');
-			}
-			var label = document.querySelector('.tbb-selected-size');
-			if (label) {
-				label.textContent = '';
-			}
+
+		// If the active size is still valid for this colour, leave it alone.
+		if (document.querySelector('.tbb-size.is-active:not(.tbb-size--disabled)')) {
+			return;
+		}
+
+		var replacement = document.querySelector('.tbb-size:not(.tbb-size--disabled):not([disabled])');
+		if (replacement) {
+			// Safe to set directly — by the time this runs the colour select has
+			// already settled (see syncVariationColour), so this pairing is valid.
+			chooseSize(replacement);
+			return;
+		}
+
+		// No valid size at all for this colour — genuinely clear the selection.
+		activateSize('');
+		var $size = $('form.variations_form select[name="attribute_pa_size"]');
+		if ($size.length) {
+			$size.val('').trigger('change');
 		}
 	}
 
@@ -181,15 +201,13 @@
 		}
 	}
 
-	// Custom size pills drive the native (hidden) size dropdown.
-	document.addEventListener('click', function (e) {
-		var pill = e.target.closest('.tbb-size');
-		if (!pill) {
-			return;
-		}
-		e.preventDefault();
-		// Ignore sizes that aren't available for the selected colour.
-		if (pill.disabled || pill.classList.contains('tbb-size--disabled')) {
+	/**
+	 * Select a size pill programmatically — same effect as a user click.
+	 *
+	 * @param {Element} pill The size pill to select.
+	 */
+	function chooseSize(pill) {
+		if (!pill || pill.disabled || pill.classList.contains('tbb-size--disabled')) {
 			return;
 		}
 		var slug = pill.getAttribute('data-value');
@@ -198,12 +216,32 @@
 		if ($select.length && $select.val() !== slug) {
 			$select.val(slug).trigger('change');
 		}
+	}
+
+	// Custom size pills drive the native (hidden) size dropdown.
+	document.addEventListener('click', function (e) {
+		var pill = e.target.closest('.tbb-size');
+		if (!pill) {
+			return;
+		}
+		e.preventDefault();
+		chooseSize(pill);
 	});
 
 	// Keep the pills in sync if the size dropdown changes elsewhere (e.g. the
 	// "Clear" reset link, or a programmatic change).
 	$(document).on('change', 'form.variations_form select[name="attribute_pa_size"]', function () {
 		activateSize(this.value);
+	});
+
+	// The SKU line lives under the title (see WooCommerce::single_sku()) rather
+	// than in WooCommerce's variation info box, which carries no SKU line in
+	// this theme. Keep it synced with whichever variation is currently matched.
+	$(document).on('found_variation', 'form.variations_form', function (e, variation) {
+		$('.product-sku__value').text((variation && variation.sku) || '');
+	});
+	$(document).on('reset_data', 'form.variations_form', function () {
+		$('.product-sku__value').text('');
 	});
 
 	// Delegated clicks for all chips (single + grid).
@@ -309,11 +347,21 @@
 
 	// On a single product, show the active colour's gallery on load so the page
 	// starts on one clean colour, and pre-select that colour in the native form.
+	// Also pre-select the first available size for that colour — otherwise the
+	// variation never fully resolves on load, leaving the SKU blank and
+	// Add to Cart disabled until the customer picks a size themselves.
 	$(window).on('load', function () {
 		var active = document.querySelector('.tbb-swatches--chips .tbb-chip.is-active[data-gallery], .tbb-swatches--strip .tbb-chip.is-active[data-gallery]');
 		if (active) {
 			swapGallery(active.getAttribute('data-gallery'));
+			// Resolves both size and colour on the native form — size first, then
+			// colour last, so colour is left as WooCommerce's authoritative pick.
 			syncVariationColour(active.getAttribute('data-colour'));
+		} else {
+			var firstSize = document.querySelector('.tbb-size:not(.tbb-size--disabled):not([disabled])');
+			if (firstSize) {
+				chooseSize(firstSize);
+			}
 		}
 	});
 })(jQuery);

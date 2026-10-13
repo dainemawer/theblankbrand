@@ -68,6 +68,15 @@ class BulkDiscountsAdmin implements ModuleInterface {
 	 * @return void
 	 */
 	public function render_metabox( $post ) {
+		// A product with structured tiers is priced from those, and the free-text
+		// field below is only the fallback for products without them. Offering
+		// the editor anyway let an admin change prices that the storefront
+		// ignores, with nothing to say so.
+		if ( $this->has_structured_tiers( (int) $post->ID ) ) {
+			$this->render_structured_tiers( (int) $post->ID );
+			return;
+		}
+
 		wp_nonce_field( self::NONCE, self::NONCE );
 
 		$content = get_post_meta( $post->ID, self::META, true );
@@ -83,6 +92,73 @@ class BulkDiscountsAdmin implements ModuleInterface {
 		);
 
 		echo '<p class="description">' . esc_html__( 'Shown on the single product page in an accordion under the description, labelled "See Bulk Discounts". Left empty, the accordion is not shown.', 'blank-brand-theme' ) . '</p>';
+	}
+
+	/**
+	 * Whether the product carries structured tiers, which the storefront prefers.
+	 *
+	 * @param int $post_id Product id.
+	 * @return bool
+	 */
+	protected function has_structured_tiers( int $post_id ): bool {
+		$data = get_post_meta( $post_id, BulkDiscounts::META, true );
+
+		return is_array( $data ) && ! empty( $data['tiers'] );
+	}
+
+	/**
+	 * Show the structured tiers read-only, and say where each figure comes from.
+	 *
+	 * @param int $post_id Product id.
+	 * @return void
+	 */
+	protected function render_structured_tiers( int $post_id ): void {
+		$data = get_post_meta( $post_id, BulkDiscounts::META, true );
+		?>
+		<p class="description">
+			<?php esc_html_e( 'These tiers are managed for you and cannot be edited here. The first price is the product\'s own price, and the 50+ price is synced from Zoho. To change them, edit the product price, or the item rate in Zoho.', 'blank-brand-theme' ); ?>
+		</p>
+		<table class="widefat striped" style="max-width:32rem">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Quantity', 'blank-brand-theme' ); ?></th>
+					<th><?php esc_html_e( 'Price', 'blank-brand-theme' ); ?></th>
+					<th><?php esc_html_e( 'Source', 'blank-brand-theme' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php foreach ( array_values( $data['tiers'] ) as $index => $tier ) : ?>
+					<tr>
+						<td>
+							<?php
+							echo esc_html(
+								null === ( $tier['max'] ?? null )
+									? sprintf( '%d+', (int) ( $tier['min'] ?? 0 ) )
+									: sprintf( '%d-%d', (int) ( $tier['min'] ?? 0 ), (int) $tier['max'] )
+							);
+							?>
+						</td>
+						<td>
+							<?php
+							echo 0 === $index
+								? esc_html__( 'The product price', 'blank-brand-theme' )
+								: wp_kses_post( wc_price( (float) ( $tier['price'] ?? 0 ) ) );
+							?>
+						</td>
+						<td>
+							<?php
+							echo esc_html(
+								0 === $index
+									? __( 'Product', 'blank-brand-theme' )
+									: ( false !== strpos( (string) ( $tier['source'] ?? '' ), 'zoho' ) ? __( 'Zoho', 'blank-brand-theme' ) : __( 'Stored', 'blank-brand-theme' ) )
+							);
+							?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
+		<?php
 	}
 
 	/**
@@ -103,6 +179,11 @@ class BulkDiscountsAdmin implements ModuleInterface {
 		}
 
 		if ( ! isset( $_POST['tbb_bulk_discounts'] ) ) {
+			return;
+		}
+
+		// The storefront does not read this field once structured tiers exist.
+		if ( $this->has_structured_tiers( (int) $post_id ) ) {
 			return;
 		}
 

@@ -63,6 +63,14 @@ class WooCommerce implements ModuleInterface {
 		remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
 		add_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 25 );
 
+		// Always show one price, never a min-max range. A handful of styles
+		// (pigment-dyed colourways) genuinely cost more than the rest of the
+		// same product — rather than surface that as a confusing range, show
+		// the lower price up front; the real per-colour price still applies
+		// once a variation is selected, same as any variable product.
+		add_filter( 'woocommerce_variable_price_html', [ $this, 'single_price_no_range' ], 10, 2 );
+		add_filter( 'woocommerce_variable_sale_price_html', [ $this, 'single_price_no_range' ], 10, 2 );
+
 		remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_product_data_tabs', 10 );
 
 		// The bulk-variations plugin replaces WooCommerce's native variations form
@@ -82,6 +90,81 @@ class WooCommerce implements ModuleInterface {
 		// Ensure WooCommerce cart scripts load on every page so AJAX
 		// add-to-cart and fragment refresh work site-wide.
 		add_action( 'wp_enqueue_scripts', [ $this, 'load_cart_fragments' ] );
+
+		// Bulk Order Grid: an out-of-stock cell should render disabled, not
+		// vanish — a gap in the grid reads as a loading glitch, not "unavailable".
+		add_filter( 'wc_bulk_variations_is_variation_visible', [ $this, 'keep_out_of_stock_cells_visible' ], 10, 2 );
+
+		// Drop nav menu items that link to a category with nothing currently
+		// in stock — a link to a dead-end empty archive page is worse than no
+		// link at all, and this stays correct as stock changes over time.
+		add_filter( 'wp_nav_menu_objects', [ $this, 'hide_empty_category_menu_items' ] );
+	}
+
+	/**
+	 * Remove nav menu items pointing at a `product_cat` term with zero
+	 * in-stock, published products. Term `count` isn't usable here — it
+	 * counts every product in the category regardless of stock status.
+	 *
+	 * @param array $items Menu item objects.
+	 * @return array
+	 */
+	public function hide_empty_category_menu_items( array $items ): array {
+		static $cache = [];
+
+		return array_values(
+			array_filter(
+				$items,
+				function ( $item ) use ( &$cache ) {
+					if ( 'product_cat' !== $item->object ) {
+						return true;
+					}
+
+					$term_id = (int) $item->object_id;
+
+					if ( ! isset( $cache[ $term_id ] ) ) {
+						$term = get_term( $term_id, 'product_cat' );
+
+						$products = $term && ! is_wp_error( $term ) ? wc_get_products(
+							[
+								'category'     => [ $term->slug ],
+								'status'       => 'publish',
+								'stock_status' => 'instock',
+								'limit'        => 1,
+								'return'       => 'ids',
+							]
+						) : [];
+
+						$cache[ $term_id ] = ! empty( $products );
+					}
+
+					return $cache[ $term_id ];
+				}
+			)
+		);
+	}
+
+	/**
+	 * Keep out-of-stock Bulk Order Grid cells rendered (as a disabled input —
+	 * the plugin already greys these out correctly once backorders are off,
+	 * see Data_Factory::get_single_variation_input_attrs()) instead of hidden.
+	 * Only overrides the stock-based hide; a variation the plugin considers
+	 * unpurchasable for another reason stays hidden.
+	 *
+	 * @param bool        $is_visible Plugin's computed visibility.
+	 * @param \WC_Product $variation  The variation being checked.
+	 * @return bool
+	 */
+	public function keep_out_of_stock_cells_visible( $is_visible, $variation ) {
+		if ( $is_visible ) {
+			return true;
+		}
+
+		if ( $variation instanceof \WC_Product && $variation->is_purchasable() ) {
+			return true;
+		}
+
+		return $is_visible;
 	}
 
 	/**
@@ -185,6 +268,12 @@ class WooCommerce implements ModuleInterface {
 	 * Output the product SKU beneath the title in the single product summary.
 	 * (The default SKU in product_meta is removed via the meta.php override.)
 	 *
+	 * For variable products the parent rarely carries its own SKU — each
+	 * variation does — so the value here starts blank and is kept in sync
+	 * with whichever variation is selected by the `found_variation` /
+	 * `reset_data` handlers in colour-swatches.js. Simple products just show
+	 * their own SKU as before.
+	 *
 	 * @return void
 	 */
 	public function single_sku(): void {
@@ -194,17 +283,49 @@ class WooCommerce implements ModuleInterface {
 			return;
 		}
 
-		$sku = $product->get_sku();
+		$is_variable = $product->is_type( 'variable' );
+		$sku         = $product->get_sku();
 
-		if ( ! $sku ) {
+		if ( ! $is_variable && ! $sku ) {
 			return;
 		}
 
 		printf(
-			'<p class="product-sku"><span class="product-sku__label">%1$s</span> %2$s</p>',
+			'<p class="product-sku"><span class="product-sku__label">%1$s</span> <span class="product-sku__value">%2$s</span></p>',
 			esc_html__( 'SKU:', 'blank-brand-theme' ),
 			esc_html( $sku )
 		);
+	}
+
+	/**
+	 * Replace a variable product's min-max price range with a single price,
+	 * on both single product and archive views.
+	 *
+	 * Shows WooCommerce's own minimum variation price. This used to prefer a
+	 * `_tbb_display_price` override, because variations still carried stale
+	 * pre-Brand-Bible prices and the live minimum could surface a figure
+	 * nothing was actually sold at. Those prices now come from Zoho on every
+	 * sync, so the live minimum is the current one by definition and the
+	 * override — a second copy of the price, which drifted the first time
+	 * anything was repriced — has been retired.
+	 *
+	 * @param string               $price   Formatted price HTML from WooCommerce
+	 *                                      (a range when variation prices differ).
+	 * @param \WC_Product_Variable $product The variable product.
+	 * @return string
+	 */
+	public function single_price_no_range( $price, $product ): string {
+		if ( ! $product instanceof \WC_Product_Variable ) {
+			return $price;
+		}
+
+		$min_price = $product->get_variation_price( 'min', true );
+
+		if ( '' === $min_price ) {
+			return $price;
+		}
+
+		return wc_price( $min_price ) . $product->get_price_suffix();
 	}
 
 	/**
@@ -255,17 +376,20 @@ class WooCommerce implements ModuleInterface {
 	 * @return array
 	 */
 	public function cart_count_fragment( array $fragments ): array {
-		$count = WC()->cart->get_cart_contents_count();
-
-		ob_start();
-		?>
-		<span class="site-header__cart-count" data-count="<?php echo esc_attr( $count ); ?>" aria-live="polite" aria-atomic="true">
-			<?php echo esc_html( $count ); ?>
-		</span>
-		<?php
-		$fragments['.site-header__cart-count'] = ob_get_clean();
+		$fragments['.site-header__cart-count'] = self::cart_count_html( (int) WC()->cart->get_cart_contents_count() );
 
 		return $fragments;
+	}
+
+	/**
+	 * The cart count badge. See {@see \TenupTheme\cart_count_html()}, which this
+	 * delegates to so the header and the fragment share one definition.
+	 *
+	 * @param int $count Items in the cart.
+	 * @return string Markup, already escaped.
+	 */
+	public static function cart_count_html( int $count ): string {
+		return \TenupTheme\cart_count_html( $count );
 	}
 
 	/**

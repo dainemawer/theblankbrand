@@ -83,16 +83,7 @@
 							class="site-header__cart-toggle"
 							aria-expanded="false"
 							aria-controls="site-header-minicart"
-							aria-label="<?php
-								$cart_count_label = WC()->cart ? WC()->cart->get_cart_contents_count() : 0;
-								echo esc_attr(
-									sprintf(
-										/* translators: %d: number of items in cart */
-										__( 'Open cart. %d items', 'blank-brand-theme' ),
-										$cart_count_label
-									)
-								);
-							?>"
+							aria-label="<?php esc_attr_e( 'Open cart', 'blank-brand-theme' ); ?>"
 						>
 							<svg class="site-header__cart-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
 								<path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
@@ -100,9 +91,7 @@
 								<path d="M16 10a4 4 0 01-8 0"/>
 							</svg>
 							<?php $cart_count = ( WC()->cart && method_exists( WC()->cart, 'get_cart_contents_count' ) ) ? (int) WC()->cart->get_cart_contents_count() : 0; ?>
-							<?php if ( $cart_count >= 1 ) : ?>
-								<span class="site-header__cart-count" data-count="<?php echo esc_attr( $cart_count ); ?>" aria-live="polite" aria-atomic="true"><?php echo esc_html( $cart_count ); ?></span>
-							<?php endif; ?>
+							<?php echo \TenupTheme\cart_count_html( $cart_count ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside. ?>
 						</button>
 
 						<div
