@@ -1,8 +1,8 @@
 # Spec: Bulk (Quantity-Tiered) Pricing
 
-**Status:** Draft / proposed
+**Status:** Implemented, with a different data model from this draft. See §15.
 **Owner:** Daine Mawer
-**Last updated:** 2026-06-19
+**Last updated:** 2026-10-13
 **Affected area:** `themes/the-blank-brand` (WooCommerce module)
 
 ---
@@ -213,3 +213,53 @@ Modules in `src/` auto-register via the 10up framework
 - **VAT:** ex-VAT line price + correct VAT line at checkout.
 - **Display parity:** single-product table prices equal the charged unit prices at
   each tier.
+
+## 15. As built (October 2026)
+
+The engine in §6 and the per-product aggregation in §4 were built as specified.
+The data model and where the numbers come from were not, and this section records
+the difference so the draft above is not mistaken for what runs.
+
+| Draft | As built | Why |
+|---|---|---|
+| Tiers are a **percentage** off the regular price | Tiers are **absolute prices** | The numbers already exist in Zoho, which is the source of truth for price. Typing percentages into WooCommerce would have been a second copy. |
+| A **global default** ruleset plus a per-product override (`tbb_bulk_tiers`, `_tbb_bulk_tiers`) | A per-product `_tbb_price_tiers`, no global default | Products in this catalogue differ in the 50+ price, and Zoho holds it per item. |
+| Tier 1 is `min 1, pct 0` of the regular price | Tier 1 is read **live from the product's own price**, never from the stored tiers | Storing it twice is what let a page advertise one price while checkout charged another. |
+| Admin: a settings tab and a per-product override panel | A **read-only** panel showing the tiers and where each figure comes from. A product with no structured tiers still gets the old free-text editor, since the storefront falls back to it. | Prices are managed in Zoho, so an editable copy in WooCommerce would be changed and then overwritten. |
+| Tiers apply to the **regular price**; sale price is ignored (§6, §11) | Tiers apply against the product's **current price**, and a tier is applied only when it beats that price | A live sale must never be undone by a bulk tier, and a stale tier must never raise what someone is charged. |
+| Migration command (§10) | A one-off parse of the description tables into `_tbb_price_tiers` for the existing products | Done once; the parser never runs at request time. |
+
+Stored shape:
+
+```php
+[
+	'tiers'      => [
+		[ 'min' => 1,  'max' => 49,   'price' => 200, 'source' => 'migrated' ],        // price is ignored; read live
+		[ 'min' => 50, 'max' => null, 'price' => 180, 'source' => 'zoho:item.rate' ],  // kept in step by the Zoho sync
+	],
+	'quote_from' => 100,    // no price at or above this quantity
+	'version'    => 1,
+]
+```
+
+**Where the figures come from.** The first tier is the product's price, which the
+Zoho sync keeps equal to the Zoho *Retail* price book. The 50+ tier is Zoho's
+`item.rate`, written by the sync. When variations of one product disagree the
+lowest is advertised, and the sync counts how many products do.
+
+**One rule for the page and the cart.** `BulkPricing::effective_tier_price()`
+decides whether a tier gives a price at all. The cart uses it to charge, and the
+tier table uses it to advertise, so they cannot disagree. A product on sale at
+R150 with a stored 50+ tier of R180 shows no 50+ row and charges R150 throughout.
+Before this, the table listed the R180 row that the cart would never charge.
+
+**VAT (§9) is not met on this site.** The spec requires WooCommerce tax to be
+configured for prices exclusive of tax. At the time of writing tax calculation is
+off, while the product page says "Prices exclude VAT", so the site charges the
+ex-VAT figure and never adds VAT. Zoho adds its default rate to the sales order
+line, so a web order shows a higher total in Zoho than the customer paid. This is
+a business decision, not a code defect, and it is open.
+
+**Tests.** `themes/the-blank-brand/tests/bulk-pricing-test.php` drives a real cart
+and covers the boundaries, per-product aggregation, isolation, idempotency, the
+chain from cart to order to Zoho payload, and display parity on sale items.
