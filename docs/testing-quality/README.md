@@ -7,3 +7,4 @@ This section covers all aspects of testing and code quality for the WP Scaffold,
 - [Debugging PHP](./debugging-php.md)
 - [Unit Testing](./unit-testing.md)
 - [Code Quality](./code-quality.md)
+- [Zoho Integration and Storefront Tests](./zoho-integration-tests.md)

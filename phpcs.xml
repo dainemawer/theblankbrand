@@ -22,6 +22,7 @@
 	<!-- Ignore filecomment for the plugin loader -->
 	<rule ref="Squiz.Commenting.FileComment.Missing">
 		<exclude-pattern>./mu-plugins/10up-plugin-loader.php</exclude-pattern>
+		<exclude-pattern>./mu-plugins/tbb-zoho-loader.php</exclude-pattern>
 	</rule>
 
 	<arg value="sp"/> <!-- Show sniff and progress -->
