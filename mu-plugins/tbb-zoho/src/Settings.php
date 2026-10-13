@@ -7,22 +7,17 @@
  * the webhook secret used by {@see StockWebhook}. Read everywhere else via
  * {@see Settings::get()} / {@see Settings::is_enabled()}.
  *
- * @package BlankBrandTheme
+ * @package TBB\Zoho
  */
 
-namespace BlankBrandTheme\Zoho;
-
-use TenupFramework\Module;
-use TenupFramework\ModuleInterface;
+namespace TBB\Zoho;
 
 /**
  * Zoho Inventory settings module.
  *
- * @package BlankBrandTheme
+ * @package TBB\Zoho
  */
-class Settings implements ModuleInterface {
-
-	use Module;
+class Settings {
 
 	const OPTION = 'tbb_zoho_settings';
 
@@ -76,6 +71,13 @@ class Settings implements ModuleInterface {
 	public static function get( string $key, $fallback = '' ) {
 		$settings = get_option( self::OPTION, [] );
 
+		// Writes default to simulated. An integration that has never been
+		// configured should not be able to create records in a live Zoho
+		// organisation on its first order.
+		if ( 'dry_run' === $key && ! array_key_exists( 'dry_run', $settings ) ) {
+			return 'yes';
+		}
+
 		return $settings[ $key ] ?? $fallback;
 	}
 
@@ -127,7 +129,7 @@ class Settings implements ModuleInterface {
 		add_options_page(
 			__( 'Zoho Inventory', 'blank-brand-theme' ),
 			__( 'Zoho Inventory', 'blank-brand-theme' ),
-			'manage_woocommerce',
+			'manage_woocommerce', // phpcs:ignore WordPress.WP.Capabilities.Unknown -- WooCommerce's own capability.
 			self::PAGE,
 			[ $this, 'render_page' ]
 		);
@@ -151,6 +153,7 @@ class Settings implements ModuleInterface {
 			'client_secret'   => __( 'Client secret', 'blank-brand-theme' ),
 			'refresh_token'   => __( 'Refresh token', 'blank-brand-theme' ),
 			'warehouse_email' => __( 'Warehouse notification email', 'blank-brand-theme' ),
+			'dry_run'         => __( 'Dry run', 'blank-brand-theme' ),
 		];
 
 		foreach ( $fields as $key => $label ) {
@@ -183,6 +186,16 @@ class Settings implements ModuleInterface {
 					esc_attr( $name ),
 					checked( 'yes', $value, false ),
 					esc_html__( 'Push completed orders to Zoho and accept stock updates from it.', 'blank-brand-theme' )
+				);
+				break;
+
+			case 'dry_run':
+				printf(
+					'<label><input type="checkbox" name="%1$s" value="yes" %2$s /> %3$s</label><p class="description">%4$s</p>',
+					esc_attr( $name ),
+					checked( 'yes', $value, false ),
+					esc_html__( 'Simulate writes instead of sending them.', 'blank-brand-theme' ),
+					esc_html__( 'Reading stock and prices is unaffected. Anything that would create a record in Zoho — a contact, sales order, package or shipment — is recorded for inspection and never sent. Turn this off only once the payloads look right.', 'blank-brand-theme' )
 				);
 				break;
 
@@ -258,6 +271,7 @@ class Settings implements ModuleInterface {
 			'organization_id' => sanitize_text_field( $input['organization_id'] ?? '' ),
 			'client_id'       => sanitize_text_field( $input['client_id'] ?? '' ),
 			'warehouse_email' => sanitize_email( $input['warehouse_email'] ?? '' ),
+			'dry_run'         => isset( $input['dry_run'] ) ? 'yes' : 'no',
 			'webhook_secret'  => $existing['webhook_secret'] ?? '',
 		];
 
@@ -268,6 +282,7 @@ class Settings implements ModuleInterface {
 		}
 
 		delete_transient( Client::TOKEN_TRANSIENT );
+		delete_transient( Client::TOKEN_FAILURE_TRANSIENT );
 
 		return $output;
 	}
@@ -355,7 +370,7 @@ class Settings implements ModuleInterface {
 	public function ajax_test_connection(): void {
 		check_ajax_referer( 'tbb_zoho_test_connection', 'nonce' );
 
-		if ( ! current_user_can( 'manage_woocommerce' ) ) {
+		if ( ! current_user_can( 'manage_woocommerce' ) ) { // phpcs:ignore WordPress.WP.Capabilities.Unknown -- WooCommerce's own capability.
 			wp_send_json_error( [ 'message' => __( 'Permission denied.', 'blank-brand-theme' ) ], 403 );
 		}
 
