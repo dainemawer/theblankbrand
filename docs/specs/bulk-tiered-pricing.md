@@ -47,13 +47,17 @@ We want quantity tiers to be **applied automatically** at cart/checkout, and
 - Cross-product cart-aggregate tiers (mixing unrelated products to reach a tier).
 - Currency/VAT-rate logic — VAT is handled by WooCommerce tax settings (see §9).
 
-## 4. Decisions (locked)
+## 4. Decisions (original draft)
+
+> **Two of these four were reversed when the feature was built.** *Pricing model* and
+> *Configuration* are marked below; §15 records what runs and why. *Tier scope* and
+> *Source of truth* stand.
 
 | Decision | Choice | Rationale |
 |---|---|---|
 | **Tier scope** | **Per product** — sum all variations (sizes/colours) of one product | Matches how blanks are bought (a size run of one shirt should reach the discount). |
-| **Pricing model** | **Percentage off base price**, stored as tiers | Bump the base price once and every tier follows; no re-keying absolute prices. |
-| **Configuration** | **Global default ruleset + optional per-product override** | One ruleset covers the catalogue; products that differ override locally. |
+| **Pricing model** | **Percentage off base price**, stored as tiers. **Superseded: absolute prices, see §15.** | Bump the base price once and every tier follows; no re-keying absolute prices. |
+| **Configuration** | **Global default ruleset + optional per-product override**. **Superseded: per-product tiers only, see §15.** | One ruleset covers the catalogue; products that differ override locally. |
 | **Source of truth** | **Structured data**, not description text | Single source; the on-page table renders from the same data the cart uses. |
 
 ## 5. Data model
