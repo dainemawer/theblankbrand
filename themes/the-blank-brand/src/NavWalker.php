@@ -91,10 +91,10 @@ class NavWalker extends \Walker_Nav_Menu {
 		// Top-level items with children: append a separate toggle button.
 		// The <a> navigates; the <button> opens/closes the sub-menu.
 		if ( 0 === $depth && $this->item_has_children ) {
-			$label        = sprintf(
+			$label = sprintf(
 				/* translators: %s: parent menu item label */
 				esc_attr__( 'Toggle %s sub-menu', 'blank-brand-theme' ),
-				$title
+				esc_attr( wp_strip_all_tags( $title ) )
 			);
 			$item_output .= '<button class="nav-dropdown-toggle" aria-expanded="false" aria-label="' . $label . '">';
 			$item_output .= '<svg class="nav-dropdown-toggle__icon" width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">';
