@@ -259,10 +259,26 @@ confirm the PIN/OTP step doesn't break the popup/redirect flow.
 7. Re-point the Zoho workflow rule at the same webhook URL/secret, if you use
    one. No change is needed there, since the site side didn't move.
 
-Two things are still decisions, not code: whether a web order should raise an
-invoice and record the payment in Zoho (none is raised today), and how VAT is
-handled, since Zoho adds its default rate to a sales order line while
-WooCommerce tax is switched off.
+Two decisions were made on 14 October, both by Megan:
+
+- **VAT.** The website adds 15% at checkout, so the customer pays what Zoho
+  shows. The order feed is unchanged: it sends ex-VAT unit prices and Zoho adds
+  its own 15%. Tax is a database setting, so run this once on each site:
+
+  ```bash
+  wp eval-file wp-content/mu-plugins/tbb-zoho/tools/vat.php            # report only
+  APPLY=1 wp eval-file wp-content/mu-plugins/tbb-zoho/tools/vat.php    # apply
+  wp eval-file wp-content/mu-plugins/tbb-zoho/tests/vat-test.php       # prove it (local)
+  ```
+
+- **Invoices.** Raised by hand in Zoho for now. The site creates a confirmed
+  sales order and stops there: it raises no invoice and records no payment.
+  The sales order carries the customer's name and email, the lines with
+  VAT-exclusive rates, and the order number as its reference. It does **not**
+  carry the customer's address or phone: those live only on the WooCommerce
+  order and in the warehouse email, so whoever invoices needs the order open
+  beside Zoho. Sending the address to the Zoho contact is a small change if a
+  tax invoice needs it. Reconsider automating invoices once volumes justify it.
 
 ## 7. Go live
 
