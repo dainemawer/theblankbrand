@@ -253,12 +253,16 @@ tier table uses it to advertise, so they cannot disagree. A product on sale at
 R150 with a stored 50+ tier of R180 shows no 50+ row and charges R150 throughout.
 Before this, the table listed the R180 row that the cart would never charge.
 
-**VAT (§9) is not met on this site.** The spec requires WooCommerce tax to be
-configured for prices exclusive of tax. At the time of writing tax calculation is
-off, while the product page says "Prices exclude VAT", so the site charges the
-ex-VAT figure and never adds VAT. Zoho adds its default rate to the sales order
-line, so a web order shows a higher total in Zoho than the customer paid. This is
-a business decision, not a code defect, and it is open.
+**VAT (§9).** Decided 14 October: the website adds 15% VAT at checkout, so the
+customer pays R207 for a R180 item and Zoho shows the same R207. This is the
+design §9 always described: WooCommerce tax on, prices entered excluding VAT.
+The order feed already sends the ex-VAT unit price (`get_item_total` without tax),
+and Zoho adds its own 15% on top, so the two totals agree with no code change.
+Until 14 October the tax setting was off, which is why the two disagreed.
+
+Tax is a database setting and does not travel with a deploy. Run
+`tools/vat.php` once per site (see `docs/setup/zoho-inventory-setup.md`), and
+`tests/vat-test.php` proves the totals and the Zoho payload agree to the cent.
 
 **Tests.** `themes/the-blank-brand/tests/bulk-pricing-test.php` drives a real cart
 and covers the boundaries, per-product aggregation, isolation, idempotency, the
