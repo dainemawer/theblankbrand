@@ -46,6 +46,9 @@ class WooCommerce implements ModuleInterface {
 		// Show 12 products per archive page (WooCommerce defaults to 16).
 		add_filter( 'loop_shop_per_page', [ $this, 'products_per_page' ] );
 
+		// List products A to Z.
+		add_filter( 'woocommerce_default_catalog_orderby', [ $this, 'default_orderby' ] );
+
 		// Single product summary — add breadcrumb + SKU and re-order so the
 		// stack reads: breadcrumb, title, SKU, rating, description, price.
 		add_action( 'woocommerce_single_product_summary', 'woocommerce_breadcrumb', 4 );
@@ -175,6 +178,20 @@ class WooCommerce implements ModuleInterface {
 	 */
 	public function products_per_page( $per_page ): int {
 		return 12;
+	}
+
+	/**
+	 * Sort product archives A to Z by name.
+	 *
+	 * The sorting dropdown is hidden, so nobody can choose another order and the
+	 * default is the only order there is. WooCommerce's own default follows the
+	 * manual order set in the admin, which is the order products were imported in.
+	 *
+	 * @param string $orderby Current default ordering.
+	 * @return string
+	 */
+	public function default_orderby( $orderby ): string {
+		return 'title';
 	}
 
 	/**
