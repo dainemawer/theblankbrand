@@ -743,6 +743,34 @@ body .woocommerce-message::after {
 	transform: translateY(-50%);
 }
 
+/* The Bulk Order Grid's notice ends in a list of what was added. A stacked
+   bullet list is tall, and in the one-row layout above it pushed off the right
+   edge of the page. Run the variations along the line instead, separated by
+   dots (the names already contain commas), and let the notice wrap when they
+   do not fit. */
+.woocommerce-notices-wrapper .woocommerce-message:has(.wcbvp-cart-variation-list) {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	row-gap: var(--wp--custom--spacing--8);
+}
+
+.woocommerce-notices-wrapper .woocommerce-message ul.wcbvp-cart-variation-list {
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	list-style: none;
+	margin: 0;
+	min-width: 0;
+	padding: 0;
+	row-gap: var(--wp--custom--spacing--4);
+}
+
+.woocommerce-notices-wrapper .woocommerce-message .wcbvp-cart-variation-list li:not(:last-child)::after {
+	content: "\00b7";
+	margin-inline: 0.6em;
+	opacity: 0.6;
+}
+
 /* Notice action button (e.g. "View cart") — white-on-black, with a white
    outline so it stays legible against the black panel. */
 .woocommerce-notices-wrapper .button,
