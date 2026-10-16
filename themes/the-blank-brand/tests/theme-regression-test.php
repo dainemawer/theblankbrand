@@ -243,6 +243,45 @@ $bare->delete( true );
 unset( $_POST['tbb_bulk_discounts'], $_POST[ BlankBrandTheme\BulkDiscountsAdmin::NONCE ] );
 wp_set_current_user( 0 );
 
+// ------------------------------------------------------------------ QA round 1
+
+echo "\nShop heading, order, 404 page and size hover\n";
+
+$shop      = wp_remote_get(
+	home_url( '/shop/' ),
+	[
+		'sslverify' => false,
+		'timeout'   => 25,
+	]
+);
+$shop_html = is_wp_error( $shop ) ? '' : wp_remote_retrieve_body( $shop );
+preg_match( '/<h1[^>]*page-title[^>]*>(.*?)<\/h1>/s', $shop_html, $h1 );
+$is( 'the shop page has a heading with text in it', 'Shop', trim( wp_strip_all_tags( $h1[1] ?? '' ) ) );
+$is( 'and only one h1', 1, preg_match_all( '/<h1[\s>]/', $shop_html ) );
+
+$is( 'products are listed by name', 'title', apply_filters( 'woocommerce_default_catalog_orderby', 'menu_order' ) );
+preg_match_all( '/<h2 class="woocommerce-loop-product__title">(.*?)<\/h2>/s', $shop_html, $names );
+$names  = array_map( static fn( $n ) => strtolower( str_replace( [ "\u{2019}", "'" ], '', html_entity_decode( wp_strip_all_tags( $n ) ) ) ), $names[1] );
+$sorted = $names;
+sort( $sorted, SORT_STRING );
+$is( 'the first page of the shop really is in name order', $sorted, $names );
+
+$gone      = wp_remote_get(
+	home_url( '/this-page-does-not-exist-' . wp_rand() . '/' ),
+	[
+		'sslverify' => false,
+		'timeout'   => 25,
+	]
+);
+$gone_html = is_wp_error( $gone ) ? '' : wp_remote_retrieve_body( $gone );
+$is( 'a missing page answers 404', 404, is_wp_error( $gone ) ? 0 : wp_remote_retrieve_response_code( $gone ) );
+$ok( 'and shows a heading, a paragraph and a way home', 1 === preg_match( '/<h1[^>]*>Page not found<\/h1>/', $gone_html ) && false !== strpos( $gone_html, 'class="error-404__text"' ) && 1 === preg_match( '/class="error-404__home" href="' . preg_quote( home_url( '/' ), '/' ) . '">\s*Return home/', $gone_html ) );
+
+$src = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/woocommerce.css' ) );
+$ok( 'the selected size turns its text white on hover (source)', 1 === preg_match( '/\.tbb-size\.is-active:hover[^{]*\{[^}]*color:\s*var\(--wp--preset--color--primary\)/', $src ) );
+$dist = file_exists( get_theme_file_path( 'dist/css/frontend.css' ) ) ? file_get_contents( get_theme_file_path( 'dist/css/frontend.css' ) ) : '';
+$ok( 'and the built stylesheet carries it', false !== strpos( $dist, '.tbb-size.is-active:hover{color:var(--wp--preset--color--primary)}' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }
