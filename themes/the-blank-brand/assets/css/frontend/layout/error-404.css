@@ -1,0 +1,33 @@
+/* 404 — page not found */
+
+.error-404__text {
+	margin-block: 0 var(--wp--custom--spacing--32);
+	max-width: 40rem;
+}
+
+/* Same look as the Add to cart button: a solid black pill. */
+.error-404__home {
+	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--primary);
+	display: inline-block;
+	font-weight: 500;
+	letter-spacing: 0.08em;
+	padding: 0.875rem 2.5rem;
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: opacity 0.2s ease;
+}
+
+.error-404__home:hover,
+.error-404__home:focus-visible {
+	color: var(--wp--preset--color--primary);
+	opacity: 0.85;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.error-404__home {
+		transition: none;
+	}
+}
