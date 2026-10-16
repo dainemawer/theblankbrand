@@ -291,6 +291,15 @@ $ok( 'and goes back to the lowest price when the choice is cleared', 1 === preg_
 $ok( 'WooCommerce\'s second copy of the price is hidden (source)', 1 === preg_match( '/form\.variations_form \.woocommerce-variation-price\s*\{\s*display:\s*none/', $src ) );
 $ok( 'and in the built stylesheet', false !== strpos( $dist, 'form.variations_form .woocommerce-variation-price{display:none}' ) );
 
+// Mini cart layout and the bulk notice. The look itself is checked in a browser; these keep
+// the rules that produce it from being removed or overridden by accident.
+$hdr = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/header.css' ) );
+$ok( 'the mini cart thumbnail is not floated right', 1 === preg_match( '/\.woocommerce-mini-cart \.woocommerce-mini-cart-item img\s*\{[^}]*float:\s*none/', $hdr ) );
+$ok( 'the mini cart item places thumbnail, details and remove button in three columns', 1 === preg_match( '/\.woocommerce-mini-cart-item\s*\{[^}]*grid-template-columns:\s*var\(--minicart-thumb\) 1fr auto/', $hdr ) );
+$ok( 'the remove button is a centred square, so its hover circle is round', 1 === preg_match( '/\.woocommerce-mini-cart-item \.remove\s*\{[^}]*border-radius:\s*50%[^}]*height:\s*1\.5rem[^}]*justify-content:\s*center[^}]*width:\s*1\.5rem/s', $hdr ) );
+$ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart\s*\{\s*position:\s*static/', $hdr ) );
+$ok( 'the bulk notice lists variations in a row, not a stacked list', 1 === preg_match( '/ul\.wcbvp-cart-variation-list\s*\{[^}]*display:\s*flex[^}]*list-style:\s*none/s', $src ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }
