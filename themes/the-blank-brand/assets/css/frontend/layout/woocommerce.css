@@ -417,6 +417,13 @@
 	font-weight: 600;
 }
 
+/* The selected size has the same specificity as the hover rule above and comes
+   after it, so on hover it filled black and kept its black text. */
+.tbb-size.is-active:hover,
+.tbb-size.is-active:focus-visible {
+	color: var(--wp--preset--color--primary);
+}
+
 /* Unavailable for the selected colour (no stock / not offered) — greyed and
    non-interactive, clearly distinct from the active-looking unselected state. */
 .tbb-size:disabled,
