@@ -53,6 +53,13 @@ class BulkPricing implements ModuleInterface {
 		// the tier is compared against whatever the product would otherwise
 		// cost and never raises it.
 		add_action( 'woocommerce_before_calculate_totals', [ $this, 'apply_tier_pricing' ], 20 );
+
+		// WooCommerce reloads the cart from the session on an ordinary page load
+		// and, when the saved totals are still good, does not recalculate them.
+		// The products it hands back then hold their normal price, so the mini
+		// cart read "50 × R150" next to a subtotal worked out at the tier price.
+		// Apply the tier here as well. It is safe to run twice.
+		add_action( 'woocommerce_cart_loaded_from_session', [ $this, 'apply_tier_pricing' ], 20 );
 	}
 
 	/**
