@@ -278,46 +278,88 @@ body.admin-bar .site-header {
 	padding: 0;
 }
 
+/* One row per item: the product link (thumbnail on the left, name beside it)
+   and the remove button on the right, with the quantity and price underneath
+   the name. Every child is placed explicitly, because WooCommerce prints the
+   remove button first and its own stylesheet floats the thumbnail right. That
+   stylesheet only applies on pages whose body carries the `woocommerce` class,
+   so the mini cart used to look different on the shop and on the home page. */
 .site-header__minicart .woocommerce-mini-cart-item {
+	--minicart-thumb: 4rem;
+
 	align-items: start;
 	border-bottom: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	column-gap: var(--wp--custom--spacing--12);
 	display: grid;
-	gap: var(--wp--custom--spacing--12);
-	grid-template-columns: 4rem 1fr auto;
+	grid-template-columns: var(--minicart-thumb) 1fr auto;
 	padding-bottom: var(--wp--custom--spacing--16);
+	row-gap: var(--wp--custom--spacing--4);
 }
 
-.site-header__minicart .woocommerce-mini-cart-item img {
-	border-radius: var(--wp--custom--border-radius--sm);
-	height: 4rem;
-	object-fit: cover;
-	width: 4rem;
-}
-
-.site-header__minicart .woocommerce-mini-cart-item a:not(.remove) {
+.site-header__minicart .woocommerce-mini-cart-item > a:not(.remove) {
+	align-items: start;
 	color: var(--wp--preset--color--tertiary);
+	column-gap: var(--wp--custom--spacing--12);
+	display: grid;
 	font-family: var(--wp--preset--font-family--asap);
 	font-size: 0.875rem;
 	font-weight: 600;
+	grid-column: 1 / span 2;
+	grid-row: 1 / span 2;
+	grid-template-columns: var(--minicart-thumb) 1fr;
 	text-decoration: none;
+}
+
+/* The selector is long on purpose: WooCommerce floats the image with
+   `.woocommerce ul.cart_list li img`, which this has to beat. */
+.site-header__minicart .woocommerce-mini-cart .woocommerce-mini-cart-item img {
+	aspect-ratio: 2 / 3;
+	border-radius: var(--wp--custom--border-radius--sm);
+	box-shadow: none;
+	float: none;
+	height: auto;
+	margin: 0;
+	object-fit: cover;
+	width: var(--minicart-thumb);
 }
 
 .site-header__minicart .woocommerce-mini-cart-item .quantity {
+	align-self: end;
 	color: var(--wp--preset--color--muted);
 	font-family: var(--wp--preset--font-family--asap);
 	font-size: 0.8125rem;
+	grid-column: 2;
+	grid-row: 2;
+	margin: 0;
+	z-index: 1;
 }
 
+/* Remove button: a fixed square with the cross centred in it, so the red circle
+   that appears on hover is a true circle with the cross in the middle. The
+   `!important` on the colours is needed because WooCommerce sets its own with
+   `!important` on pages that carry the `woocommerce` body class. */
 .site-header__minicart .woocommerce-mini-cart-item .remove {
-	color: var(--wp--preset--color--muted);
+	align-items: center;
+	background: transparent;
+	border-radius: 50%;
+	color: var(--wp--preset--color--muted) !important;
+	display: flex;
 	font-size: 1.25rem;
+	grid-column: 3;
+	grid-row: 1;
+	height: 1.5rem;
+	justify-content: center;
 	line-height: 1;
+	padding: 0;
 	text-decoration: none;
-	transition: color 0.15s ease;
+	transition: background-color 0.15s ease, color 0.15s ease;
+	width: 1.5rem;
 }
 
-.site-header__minicart .woocommerce-mini-cart-item .remove:hover {
-	color: var(--wp--preset--color--error);
+.site-header__minicart .woocommerce-mini-cart-item .remove:hover,
+.site-header__minicart .woocommerce-mini-cart-item .remove:focus-visible {
+	background: var(--wp--preset--color--error);
+	color: var(--wp--preset--color--primary) !important;
 }
 
 /* Subtotal */
@@ -612,9 +654,17 @@ html.no-js .nav-dropdown-toggle {
 		color: var(--wp--preset--color--secondary);
 	}
 
-	/* Keep the minicart panel within the viewport on small screens. */
+	/* Keep the minicart panel within the viewport on small screens. The cart
+	   icon is not the right-most item here (the menu button sits after it), so a
+	   panel anchored to the icon ran off the left edge. Anchor it to the header,
+	   which spans the viewport, instead. */
+	.site-header__cart {
+		position: static;
+	}
+
 	.site-header__minicart {
-		width: min(22rem, calc(100vw - 2rem));
+		right: 1rem;
+		width: min(22rem, calc(100% - 2rem));
 	}
 
 	/* No-JS fallback: the drawer can't be toggled without JS, so render
