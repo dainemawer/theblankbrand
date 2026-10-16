@@ -244,6 +244,35 @@
 		$('.product-sku__value').text('');
 	});
 
+	// One price, kept accurate. The price under the title starts as the lowest
+	// price (see WooCommerce::single_price_no_range()), and WooCommerce prints
+	// the chosen variation's price a second time above the quantity box, which
+	// CSS hides. So follow the chosen variation here and put the lowest price
+	// back when the choice is cleared. WooCommerce sends no price_html when
+	// every variation costs the same, in which case the price stays as it is.
+	function summaryPrice() {
+		return $('.summary.entry-summary > p.price').first();
+	}
+	$(document).on('found_variation', 'form.variations_form', function (e, variation) {
+		var $price = summaryPrice();
+		if (!$price.length || !variation || !variation.price_html) {
+			return;
+		}
+		if (undefined === $price.data('tbbLowestPrice')) {
+			$price.data('tbbLowestPrice', $price.html());
+			$price.attr('aria-live', 'polite');
+		}
+		var $html = $('<div>').html(variation.price_html);
+		var $inner = $html.children('.price');
+		$price.html($inner.length ? $inner.html() : $html.html());
+	});
+	$(document).on('reset_data', 'form.variations_form', function () {
+		var $price = summaryPrice();
+		if ($price.length && undefined !== $price.data('tbbLowestPrice')) {
+			$price.html($price.data('tbbLowestPrice'));
+		}
+	});
+
 	// Delegated clicks for all chips (single + grid).
 	document.addEventListener('click', function (e) {
 		var chip = e.target.closest('.tbb-chip');

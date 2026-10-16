@@ -441,6 +441,13 @@
 	color: var(--wp--preset--color--secondary);
 }
 
+/* WooCommerce prints the chosen variation's price a second time above the
+   quantity box. The price under the title follows the selection instead (see
+   colour-swatches.js), so hide the copy. Stock messages in the same box stay. */
+.woocommerce div.product form.variations_form .woocommerce-variation-price {
+	display: none;
+}
+
 /* Add-to-cart row: quantity stepper + add-to-cart button, divided from the
    bulk-order CTA below by a bottom border. */
 .woocommerce div.product form.variations_form .woocommerce-variation-add-to-cart {

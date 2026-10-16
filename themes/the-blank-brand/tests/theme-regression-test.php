@@ -282,6 +282,15 @@ $ok( 'the selected size turns its text white on hover (source)', 1 === preg_matc
 $dist = file_exists( get_theme_file_path( 'dist/css/frontend.css' ) ) ? file_get_contents( get_theme_file_path( 'dist/css/frontend.css' ) ) : '';
 $ok( 'and the built stylesheet carries it', false !== strpos( $dist, '.tbb-size.is-active:hover{color:var(--wp--preset--color--primary)}' ) );
 
+// One price on a variable product. The behaviour itself (the price follows the chosen colour
+// and size, and the lowest price returns on clear) is checked in a browser; these keep the
+// three pieces it depends on from being removed.
+$js = file_get_contents( get_theme_file_path( 'assets/js/colour-swatches.js' ) );
+$ok( 'the price under the title follows the selected variation', false !== strpos( $js, 'summaryPrice()' ) && false !== strpos( $js, 'variation.price_html' ) );
+$ok( 'and goes back to the lowest price when the choice is cleared', 1 === preg_match( '/reset_data[^{]*\{[^}]*summaryPrice\(\)[\s\S]{0,200}tbbLowestPrice/', $js ) );
+$ok( 'WooCommerce\'s second copy of the price is hidden (source)', 1 === preg_match( '/form\.variations_form \.woocommerce-variation-price\s*\{\s*display:\s*none/', $src ) );
+$ok( 'and in the built stylesheet', false !== strpos( $dist, 'form.variations_form .woocommerce-variation-price{display:none}' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }
