@@ -297,7 +297,8 @@ $hdr = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/heade
 $ok( 'the mini cart thumbnail is not floated right', 1 === preg_match( '/\.woocommerce-mini-cart \.woocommerce-mini-cart-item img\s*\{[^}]*float:\s*none/', $hdr ) );
 $ok( 'the mini cart item places thumbnail, details and remove button in three columns', 1 === preg_match( '/\.woocommerce-mini-cart-item\s*\{[^}]*grid-template-columns:\s*var\(--minicart-thumb\) 1fr auto/', $hdr ) );
 $ok( 'the remove button is a centred square, so its hover circle is round', 1 === preg_match( '/\.woocommerce-mini-cart-item \.remove\s*\{[^}]*border-radius:\s*50%[^}]*height:\s*1\.5rem[^}]*justify-content:\s*center[^}]*width:\s*1\.5rem/s', $hdr ) );
-$ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart\s*\{\s*position:\s*static/', $hdr ) );
+$ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart(,\s*\.site-header__account)?\s*\{\s*position:\s*static/', $hdr ) );
+$ok( '  and so is the account menu', 1 === preg_match( '/\.site-header__cart,\s*\.site-header__account\s*\{\s*position:\s*static/', $hdr ) );
 $ok( 'the bulk notice lists variations in a row, not a stacked list', 1 === preg_match( '/ul\.wcbvp-cart-variation-list\s*\{[^}]*display:\s*flex[^}]*list-style:\s*none/s', $src ) );
 
 // Checkout terms links, and the quote limit's product page pieces.
@@ -334,6 +335,133 @@ $want  = substr( md5_file( get_theme_file_path( 'dist/css/frontend.css' ) ), 0, 
 $asset = include get_theme_file_path( 'dist/js/frontend.asset.php' );
 $is( 'the page links frontend.css with its own content hash', $want, $ver[1] ?? '' );
 $ok( '  which is not the JavaScript bundle\'s hash it used to borrow', ( $ver[1] ?? '' ) !== $asset['version'] );
+
+// ------------------------------------------------------------------ QA round 4
+
+echo "\nLinks, the header account control and the My Account pages\n";
+
+// Link colour. The theme's own link colour used to be white, which is invisible on every white page.
+$theme_json = json_decode( (string) file_get_contents( get_theme_file_path( 'theme.json' ) ), true );
+$palette    = [];
+foreach ( $theme_json['settings']['color']['palette'] as $swatch ) { $palette[ $swatch['slug'] ] = ltrim( $swatch['color'], '#' ); }
+$slug_of    = fn( $ref ) => preg_replace( '/^var\(--wp--preset--color--(.+)\)$/', '$1', (string) $ref );
+$link       = $theme_json['styles']['elements']['link'];
+$link_slug  = $slug_of( $link['color']['text'] );
+$hover_slug = $slug_of( $link[':hover']['color']['text'] );
+$luminance  = function ( string $hex ): float {
+	$out = [];
+	foreach ( str_split( $hex, 2 ) as $channel ) {
+		$v     = hexdec( $channel ) / 255;
+		$out[] = $v <= 0.03928 ? $v / 12.92 : ( ( $v + 0.055 ) / 1.055 ) ** 2.4;
+	}
+	return 0.2126 * $out[0] + 0.7152 * $out[1] + 0.0722 * $out[2];
+};
+$contrast   = function ( string $a, string $b ) use ( $luminance ): float {
+	$la = $luminance( $a );
+	$lb = $luminance( $b );
+	return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
+};
+$white = $palette['primary'];
+$ok( 'the default link colour is not white (white links vanish on the white pages)', 'primary' !== $link_slug );
+$ok( 'the default link colour reads on white (at least 7:1)', $contrast( $palette[ $link_slug ], $white ) >= 7 );
+$ok( 'the hover colour reads on white too (at least 4.5:1), not the pale grey it was', $contrast( $palette[ $hover_slug ], $white ) >= 4.5 );
+$ok( 'the header and footer links set their own white, so they are not caught by that change', 1 === preg_match( '/site-header__menu > \.menu-item > a \{[^}]*color: var\(--wp--preset--color--primary\)/s', (string) file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/header.css' ) ) ) && 1 === preg_match( '/site-footer__menu li > a \{[^}]*color: var\(--wp--preset--color--primary\)/s', (string) file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/footer.css' ) ) ) );
+$woo_css = (string) file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/woocommerce.css' ) );
+$ok( 'links inside the black notice panels are kept white', 1 === preg_match( '/woocommerce-notices-wrapper \.woocommerce-message a:not\(\.button\)[^{]*\{[^}]*color: var\(--wp--preset--color--primary\)/s', $woo_css ) );
+
+// The account stylesheet, and that it is part of the build.
+$account_css = (string) file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/account.css' ) );
+$ok( 'the account stylesheet is imported by the layout', false !== strpos( (string) file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/index.css' ) ), '@import url("account.css")' ) );
+foreach ( [
+	'.woocommerce-MyAccount-navigation'      => 'the account navigation',
+	'form.login'                             => 'the login form',
+	'form.lost_reset_password'               => 'the lost and reset password forms',
+	'.woocommerce-table__product-name a'     => 'the product name link in an order table',
+	'.woocommerce-order-overview'            => 'the thank-you page overview',
+	'.woocommerce-Address-title'             => 'the address headings',
+] as $needle => $what ) {
+	$ok( "it styles $what", false !== strpos( $account_css, $needle ) );
+}
+$ok( 'the product name link is a dark, bold link rather than the old white', 1 === preg_match( '/\.woocommerce-table__product-name a,[^{]*\{[^}]*color: var\(--wp--preset--color--tertiary\)[^}]*font-weight: 600/s', $account_css ) );
+$ok( 'the buttons are the black pill the rest of the shop uses', 1 === preg_match( '/\.account-page \.woocommerce \.button,[^{]*\{[^}]*background-color: var\(--wp--preset--color--tertiary\)[^}]*border-radius: var\(--wp--custom--border-radius--full\)/s', $account_css ) );
+$dist_css = (string) @file_get_contents( get_theme_file_path( 'dist/css/frontend.css' ) );
+$ok( 'the built stylesheet carries the account styles and the header dropdown', false !== strpos( $dist_css, 'woocommerce-MyAccount-navigation' ) && false !== strpos( $dist_css, 'site-header__account-menu' ) );
+$dist_js = (string) @file_get_contents( get_theme_file_path( 'dist/js/frontend.js' ) );
+$ok( 'the built script knows about the account menu', false !== strpos( $dist_js, 'site-header__account-toggle' ) );
+
+// The header as a visitor sees it (over HTTP, so it is the real page).
+$page = function ( string $path ) {
+	return wp_remote_retrieve_body(
+		wp_remote_get(
+			home_url( $path ),
+			[
+				'sslverify' => false,
+				'timeout'   => 30,
+			]
+		)
+	);
+};
+$home = $page( '/' );
+$ok( 'a visitor gets a Log in link in the header', 1 === preg_match( '/<a class="site-header__account-link" href="' . preg_quote( esc_url( wc_get_page_permalink( 'myaccount' ) ), '/' ) . '">.*?Log in/s', $home ) );
+$ok( '  and no account dropdown and no Log out link', false === strpos( $home, 'site-header__account-toggle' ) && false === strpos( $home, 'customer-logout' ) );
+
+// The header for a customer: built in-process as that customer, with a name that tries to inject markup.
+$evil = 'Pat <script>alert(1)</script> "Q"';
+$uid  = wp_insert_user(
+	[
+		'user_login'   => 'tbb_header_test_' . wp_rand(),
+		'user_pass'    => wp_generate_password( 24 ),
+		'user_email'   => 'tbb-header-test-' . wp_rand() . '@example.com',
+		'display_name' => $evil,
+		'role'         => 'customer',
+	]
+);
+$ok( 'a throwaway customer was created', ! is_wp_error( $uid ) );
+if ( ! is_wp_error( $uid ) ) {
+	wp_set_current_user( $uid );
+	// WordPress strips tags from a display name when it saves one, so set the hostile name on the
+	// loaded user (in memory only) to see what the header does with markup that gets that far.
+	wp_get_current_user()->display_name = $evil;
+	ob_start();
+	locate_template( 'header.php', true, false );
+	$head = ob_get_clean();
+	preg_match( '/<div class="site-header__account">.*?<div class="site-header__cart">/s', $head, $m );
+	$box = $m[0] ?? '';
+	$ok( 'a customer gets the account button, closed to start with', false !== strpos( $box, 'class="site-header__account-toggle"' ) && false !== strpos( $box, 'aria-expanded="false"' ) && 1 === preg_match( '/id="site-header-account-menu"[^>]*\bhidden\b/s', $box ) );
+	$ok( '  the button controls the menu and has a name for screen readers', false !== strpos( $box, 'aria-controls="site-header-account-menu"' ) && false !== strpos( $box, 'aria-label="Account menu"' ) );
+	$ok( '  and no longer the Log in link', false === strpos( $box, 'site-header__account-link' ) );
+	$items = wc_get_account_menu_items();
+	unset( $items['customer-logout'] );
+	$links = [];
+	preg_match_all( '/<li>\s*<a href="([^"]+)">([^<]+)<\/a>/', $box, $mm, PREG_SET_ORDER );
+	foreach ( $mm as $row ) { $links[ html_entity_decode( $row[1] ) ] = html_entity_decode( $row[2] ); }
+	$want = [];
+	foreach ( $items as $endpoint => $label ) { $want[ wc_get_account_endpoint_url( $endpoint ) ] = 'dashboard' === $endpoint ? 'My account' : $label; }
+	$is( '  it lists every account page WooCommerce offers, My account first', $want, $links );
+	$ok( '  and My account is first', array_key_first( $links ) === wc_get_account_endpoint_url( 'dashboard' ) );
+	$ok( '  it ends with a Log out link, the one WooCommerce gives (it carries a nonce)', false !== strpos( $box, '<a class="site-header__account-logout" href="' . esc_url( wc_logout_url() ) . '">Log out</a>' ) && false !== strpos( wc_logout_url(), '_wpnonce=' ) );
+	$ok( '  and it sends the customer back to My Account, the login page, afterwards', false !== strpos( urldecode( wc_logout_url() ), wc_get_page_permalink( 'myaccount' ) ) );
+	$ok( '  the name is shown, with its markup escaped', false !== strpos( $box, 'Pat &lt;script&gt;alert(1)&lt;/script&gt; &quot;Q&quot;' ) && false === strpos( $box, '<script>alert(1)' ) );
+	wp_set_current_user( 0 );
+	require_once ABSPATH . 'wp-admin/includes/user.php';
+	wp_delete_user( $uid );
+	$ok( 'the throwaway customer was removed', false === get_userdata( $uid ) );
+}
+
+// The My Account page: a title and a container it did not have.
+$login = $page( '/my-account/' );
+$ok( 'the My Account page has exactly one h1', 1 === preg_match_all( '/<h1[ >]/', $login ) );
+$ok( '  it is the page title, in the shop\'s heading style', 1 === preg_match( '/<h1 class="page-title">My account<\/h1>/', $login ) );
+$ok( '  inside the container the page now has', 1 === preg_match( '/<div class="container u-margin-block account-page">\s*<h1/', $login ) );
+$ok( '  and the login form is on it', false !== strpos( $login, 'woocommerce-form-login' ) );
+$ok( 'an endpoint gets its own title (lost password)', 1 === preg_match( '/<h1 class="page-title">Lost password<\/h1>/', $page( '/my-account/lost-password/' ) ) );
+$about = $page( '/about-us/' );
+$ok( 'other pages are not wrapped or given a second title', false === strpos( $about, 'account-page' ) );
+
+// The script.
+$ok( 'the account menu is started with the rest of the header script', false !== strpos( (string) file_get_contents( get_theme_file_path( 'assets/js/frontend/frontend.ts' ) ), 'initAccountMenu()' ) );
+$nav_ts = (string) file_get_contents( get_theme_file_path( 'assets/js/frontend/components/navigation.ts' ) );
+$ok( 'the minicart and the account menu share one open/close routine', 2 === substr_count( $nav_ts, 'initTogglePanel(' ) - 1 );
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
