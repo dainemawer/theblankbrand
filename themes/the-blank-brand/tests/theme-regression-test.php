@@ -307,6 +307,34 @@ $quote_js = file_get_contents( get_theme_file_path( 'assets/js/quote-limit.js' )
 $ok( 'the product page script blocks a submit over the limit', false !== strpos( $quote_js, "addEventListener(\n\t\t'submit'" ) || false !== strpos( $quote_js, "'submit'" ) );
 $ok( 'and the quote notice is styled', false !== strpos( $dist, '.tbb-quote-notice' ) );
 
+// Stylesheet versioning. The ?ver= must change when the CSS changes, even if the JavaScript bundle did not.
+$tmp_a = wp_tempnam( 'css-a' );
+$tmp_b = wp_tempnam( 'css-b' );
+$tmp_c = wp_tempnam( 'css-c' );
+file_put_contents( $tmp_a, 'a{color:#000}' );
+file_put_contents( $tmp_b, 'a{color:#111}' );
+file_put_contents( $tmp_c, 'a{color:#000}' );
+$va = BlankBrandTheme\Assets::file_version( $tmp_a, 'fallback' );
+$is( 'a stylesheet version is a short content hash', 12, strlen( $va ) );
+$ok( 'a different file gets a different version', BlankBrandTheme\Assets::file_version( $tmp_b, 'fallback' ) !== $va );
+$is( 'identical content gets the same version', $va, BlankBrandTheme\Assets::file_version( $tmp_c, 'fallback' ) );
+$is( 'a missing file falls back to the supplied version', 'fallback', BlankBrandTheme\Assets::file_version( '/no/such/file.css', 'fallback' ) );
+foreach ( [ $tmp_a, $tmp_b, $tmp_c ] as $f ) { unlink( $f ); }
+$home_html = wp_remote_retrieve_body(
+	wp_remote_get(
+		home_url( '/' ),
+		[
+			'sslverify' => false,
+			'timeout'   => 25,
+		]
+	)
+);
+preg_match( '/dist\/css\/frontend\.css\?ver=([0-9a-f]+)/', $home_html, $ver );
+$want  = substr( md5_file( get_theme_file_path( 'dist/css/frontend.css' ) ), 0, 12 );
+$asset = include get_theme_file_path( 'dist/js/frontend.asset.php' );
+$is( 'the page links frontend.css with its own content hash', $want, $ver[1] ?? '' );
+$ok( '  which is not the JavaScript bundle\'s hash it used to borrow', ( $ver[1] ?? '' ) !== $asset['version'] );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }

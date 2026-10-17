@@ -105,8 +105,43 @@ class Assets implements ModuleInterface {
 			'styles',
 			BLANK_BRAND_THEME_TEMPLATE_URL . '/dist/css/frontend.css',
 			[ 'blank-brand-fonts' ],
-			$this->get_asset_info( 'frontend', 'version' )
+			self::css_version( 'css/frontend.css', $this->get_asset_info( 'frontend', 'version' ) )
 		);
+	}
+
+	/**
+	 * A cache-busting version for a built stylesheet, taken from the file itself.
+	 *
+	 * The `?ver=` on a stylesheet decides whether a browser that already holds it
+	 * asks for it again, and the host serves these files with a year-long cache.
+	 * The theme used the hash in the matching `.asset.php`, but webpack makes that
+	 * hash from the JavaScript bundle only, so a change to the CSS alone left the
+	 * address untouched and returning visitors kept the old file.
+	 *
+	 * @param string $relative_path Path under dist/, such as `css/frontend.css`.
+	 * @param string $fallback      Version to use when the file cannot be read.
+	 * @return string
+	 */
+	public static function css_version( string $relative_path, string $fallback = '' ): string {
+		return self::file_version( BLANK_BRAND_THEME_DIST_PATH . ltrim( $relative_path, '/' ), $fallback );
+	}
+
+	/**
+	 * A short hash of a file's contents, remembered for the rest of the request.
+	 *
+	 * @param string $absolute_path File to hash.
+	 * @param string $fallback      Returned when the file cannot be read.
+	 * @return string
+	 */
+	public static function file_version( string $absolute_path, string $fallback = '' ): string {
+		static $hashes = [];
+
+		if ( ! isset( $hashes[ $absolute_path ] ) ) {
+			$hash                     = is_readable( $absolute_path ) ? md5_file( $absolute_path ) : false;
+			$hashes[ $absolute_path ] = $hash ? substr( $hash, 0, 12 ) : $fallback;
+		}
+
+		return $hashes[ $absolute_path ];
 	}
 
 	/**
