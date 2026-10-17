@@ -256,6 +256,13 @@ body.admin-bar .site-header {
    Account: a Log in link for visitors, a dropdown for customers
    ========================================================================== */
 
+.site-header__actions {
+	align-items: center;
+	display: flex;
+	flex-shrink: 0;
+	gap: var(--wp--custom--spacing--4);
+}
+
 .site-header__account {
 	flex-shrink: 0;
 	position: relative;
@@ -270,8 +277,7 @@ body.admin-bar .site-header {
 	flex-shrink: 0;
 }
 
-/* The word "Log in" only shows where there is room; the icon carries it on a phone,
-   and the text stays in the page for screen readers. */
+/* The icon carries "Log in"; the word stays in the page for screen readers only. */
 .site-header__account-label {
 	border: 0;
 	clip: rect(1px, 1px, 1px, 1px);
@@ -283,21 +289,6 @@ body.admin-bar .site-header {
 	position: absolute;
 	white-space: nowrap;
 	width: 1px;
-}
-
-@media (min-width: 68.75em) {
-	.site-header__account-label {
-		clip: auto;
-		clip-path: none;
-		font-family: var(--wp--preset--font-family--asap);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		height: auto;
-		margin: 0;
-		overflow: visible;
-		position: static;
-		width: auto;
-	}
 }
 
 .site-header__account-menu {

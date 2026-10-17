@@ -78,6 +78,7 @@
 					</nav>
 
 					<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+					<div class="site-header__actions">
 					<div class="site-header__account">
 						<?php if ( is_user_logged_in() ) : ?>
 							<?php
@@ -154,6 +155,7 @@
 								<?php woocommerce_mini_cart(); ?>
 							</div>
 						</div>
+					</div>
 					</div>
 					<?php endif; ?>
 
