@@ -460,6 +460,21 @@ $ok( 'an endpoint gets its own title (lost password)', 1 === preg_match( '/<h1 c
 $about = $page( '/about-us/' );
 $ok( 'other pages are not wrapped or given a second title', false === strpos( $about, 'account-page' ) );
 
+// Black buttons invert on hover: white fill, black text, black border. Each one needs the
+// rule, and a border at rest so the hover border does not change the button's size.
+$css_dir = 'assets/css/frontend/';
+foreach ( [
+	'the Add to cart button'            => [ 'layout/woocommerce.css', '/single_add_to_cart_button\.button\.alt:hover:not\(\.tbb-quote-blocked\),[^{]*\{[^}]*background-color: var\(--wp--preset--color--primary\);[^}]*border-color: var\(--wp--preset--color--tertiary\);[^}]*color: var\(--wp--preset--color--tertiary\)/s' ],
+	'the notice buttons'                => [ 'layout/woocommerce.css', '/woocommerce-notices-wrapper \.button:hover,[^{]*\{[^}]*background-color: var\(--wp--preset--color--primary\);[^}]*color: var\(--wp--preset--color--tertiary\)/s' ],
+	'the 404 Return home button'        => [ 'layout/error-404.css', '/\.error-404__home:hover,[^{]*\{[^}]*background-color: var\(--wp--preset--color--primary\);[^}]*color: var\(--wp--preset--color--tertiary\)/s' ],
+	'the contact form Send button'      => [ 'components/forms.css', '/input\[type="submit"\]:hover,[^{]*\{[^}]*background: var\(--wp--preset--color--primary\);[^}]*color: var\(--wp--preset--color--tertiary\)/s' ],
+	'the mini cart View cart button'    => [ 'layout/header.css', '/\.button\.wc-forward:hover,[^{]*\{[^}]*background-color: var\(--wp--preset--color--primary\);[^}]*color: var\(--wp--preset--color--tertiary\)/s' ],
+] as $what => $rule ) {
+	$ok( "$what inverts on hover", 1 === preg_match( $rule[1], (string) file_get_contents( get_theme_file_path( $css_dir . $rule[0] ) ) ) );
+}
+$ok( 'the Send button has a black border at rest, so hovering does not resize it', 1 === preg_match( '/input\[type="submit"\]\s*\{[^}]*border: 2px solid var\(--wp--preset--color--tertiary\)/s', (string) file_get_contents( get_theme_file_path( $css_dir . 'components/forms.css' ) ) ) );
+$ok( 'a quote-blocked Add to cart (disabled look) does not invert', false !== strpos( (string) file_get_contents( get_theme_file_path( $css_dir . 'layout/woocommerce.css' ) ), ':hover:not(.tbb-quote-blocked)' ) );
+
 // The script.
 $ok( 'the account menu is started with the rest of the header script', false !== strpos( (string) file_get_contents( get_theme_file_path( 'assets/js/frontend/frontend.ts' ) ), 'initAccountMenu()' ) );
 $nav_ts = (string) file_get_contents( get_theme_file_path( 'assets/js/frontend/components/navigation.ts' ) );

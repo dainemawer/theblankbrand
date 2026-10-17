@@ -72,7 +72,7 @@
 	display: block;
 	margin-left: auto;
 	padding: 14px 32px;
-	border: none;
+	border: 2px solid var(--wp--preset--color--tertiary);
 	border-radius: var(--wp--custom--border-radius--full);
 	background: var(--wp--preset--color--tertiary);
 	color: var(--wp--preset--color--primary);
@@ -81,11 +81,13 @@
 	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	cursor: pointer;
-	transition: opacity 0.2s ease;
+	transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.site-form input[type="submit"]:hover {
-	opacity: 0.85;
+.site-form input[type="submit"]:hover,
+.site-form input[type="submit"]:focus-visible {
+	background: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 .site-form__two-cols {

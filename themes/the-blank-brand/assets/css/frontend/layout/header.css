@@ -519,11 +519,14 @@ body.admin-bar .site-header {
 
 .site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward {
 	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
 	color: var(--wp--preset--color--primary);
 }
 
-.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:hover {
-	background-color: var(--wp--preset--color--neutral);
+.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:hover,
+.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:focus-visible {
+	background-color: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 .site-header__minicart .woocommerce-mini-cart__buttons .checkout.wc-forward {
