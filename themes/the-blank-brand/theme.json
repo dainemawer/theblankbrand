@@ -400,11 +400,11 @@
 			},
 			"link": {
 				"color": {
-					"text": "var(--wp--preset--color--primary)"
+					"text": "var(--wp--preset--color--tertiary)"
 				},
 				":hover": {
 					"color": {
-						"text": "var(--wp--preset--color--secondary)"
+						"text": "var(--wp--preset--color--muted)"
 					}
 				}
 			}
