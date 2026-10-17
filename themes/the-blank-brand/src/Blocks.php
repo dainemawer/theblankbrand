@@ -103,7 +103,7 @@ class Blocks implements ModuleInterface {
 			'editor-style-overrides',
 			BLANK_BRAND_THEME_TEMPLATE_URL . '/dist/css/editor-style-overrides.css',
 			[],
-			$this->get_asset_info( 'editor-style-overrides', 'version' )
+			Assets::css_version( 'css/editor-style-overrides.css', $this->get_asset_info( 'editor-style-overrides', 'version' ) )
 		);
 
 		if ( defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ) {
