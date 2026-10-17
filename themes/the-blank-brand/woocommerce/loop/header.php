@@ -21,8 +21,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 ?>
 <header class="woocommerce-products-header">
-	<?php if ( apply_filters( 'woocommerce_show_page_title', true ) ) : ?>
-		<h1 class="woocommerce-products-header__title page-title"><?php woocommerce_page_title(); ?></h1>
+	<?php
+	// The store has no WooCommerce "Shop" page, so the title comes back empty on
+	// /shop/ and the heading rendered with nothing in it.
+	$page_title = woocommerce_page_title( false );
+	if ( '' === $page_title && is_shop() ) {
+		$page_title = __( 'Shop', 'blank-brand-theme' );
+	}
+	?>
+	<?php if ( apply_filters( 'woocommerce_show_page_title', true ) && '' !== $page_title ) : ?>
+		<h1 class="woocommerce-products-header__title page-title"><?php echo esc_html( $page_title ); ?></h1>
 	<?php endif; ?>
 
 	<?php

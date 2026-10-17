@@ -243,6 +243,70 @@ $bare->delete( true );
 unset( $_POST['tbb_bulk_discounts'], $_POST[ BlankBrandTheme\BulkDiscountsAdmin::NONCE ] );
 wp_set_current_user( 0 );
 
+// ------------------------------------------------------------------ QA round 1
+
+echo "\nShop heading, order, 404 page and size hover\n";
+
+$shop      = wp_remote_get(
+	home_url( '/shop/' ),
+	[
+		'sslverify' => false,
+		'timeout'   => 25,
+	]
+);
+$shop_html = is_wp_error( $shop ) ? '' : wp_remote_retrieve_body( $shop );
+preg_match( '/<h1[^>]*page-title[^>]*>(.*?)<\/h1>/s', $shop_html, $h1 );
+$is( 'the shop page has a heading with text in it', 'Shop', trim( wp_strip_all_tags( $h1[1] ?? '' ) ) );
+$is( 'and only one h1', 1, preg_match_all( '/<h1[\s>]/', $shop_html ) );
+
+$is( 'products are listed by name', 'title', apply_filters( 'woocommerce_default_catalog_orderby', 'menu_order' ) );
+preg_match_all( '/<h2 class="woocommerce-loop-product__title">(.*?)<\/h2>/s', $shop_html, $names );
+$names  = array_map( static fn( $n ) => strtolower( str_replace( [ "\u{2019}", "'" ], '', html_entity_decode( wp_strip_all_tags( $n ) ) ) ), $names[1] );
+$sorted = $names;
+sort( $sorted, SORT_STRING );
+$is( 'the first page of the shop really is in name order', $sorted, $names );
+
+$gone      = wp_remote_get(
+	home_url( '/this-page-does-not-exist-' . wp_rand() . '/' ),
+	[
+		'sslverify' => false,
+		'timeout'   => 25,
+	]
+);
+$gone_html = is_wp_error( $gone ) ? '' : wp_remote_retrieve_body( $gone );
+$is( 'a missing page answers 404', 404, is_wp_error( $gone ) ? 0 : wp_remote_retrieve_response_code( $gone ) );
+$ok( 'and shows a heading, a paragraph and a way home', 1 === preg_match( '/<h1[^>]*>Page not found<\/h1>/', $gone_html ) && false !== strpos( $gone_html, 'class="error-404__text"' ) && 1 === preg_match( '/class="error-404__home" href="' . preg_quote( home_url( '/' ), '/' ) . '">\s*Return home/', $gone_html ) );
+
+$src = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/woocommerce.css' ) );
+$ok( 'the selected size turns its text white on hover (source)', 1 === preg_match( '/\.tbb-size\.is-active:hover[^{]*\{[^}]*color:\s*var\(--wp--preset--color--primary\)/', $src ) );
+$dist = file_exists( get_theme_file_path( 'dist/css/frontend.css' ) ) ? file_get_contents( get_theme_file_path( 'dist/css/frontend.css' ) ) : '';
+$ok( 'and the built stylesheet carries it', false !== strpos( $dist, '.tbb-size.is-active:hover{color:var(--wp--preset--color--primary)}' ) );
+
+// One price on a variable product. The behaviour itself (the price follows the chosen colour
+// and size, and the lowest price returns on clear) is checked in a browser; these keep the
+// three pieces it depends on from being removed.
+$js = file_get_contents( get_theme_file_path( 'assets/js/colour-swatches.js' ) );
+$ok( 'the price under the title follows the selected variation', false !== strpos( $js, 'summaryPrice()' ) && false !== strpos( $js, 'variation.price_html' ) );
+$ok( 'and goes back to the lowest price when the choice is cleared', 1 === preg_match( '/reset_data[^{]*\{[^}]*summaryPrice\(\)[\s\S]{0,200}tbbLowestPrice/', $js ) );
+$ok( 'WooCommerce\'s second copy of the price is hidden (source)', 1 === preg_match( '/form\.variations_form \.woocommerce-variation-price\s*\{\s*display:\s*none/', $src ) );
+$ok( 'and in the built stylesheet', false !== strpos( $dist, 'form.variations_form .woocommerce-variation-price{display:none}' ) );
+
+// Mini cart layout and the bulk notice. The look itself is checked in a browser; these keep
+// the rules that produce it from being removed or overridden by accident.
+$hdr = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/header.css' ) );
+$ok( 'the mini cart thumbnail is not floated right', 1 === preg_match( '/\.woocommerce-mini-cart \.woocommerce-mini-cart-item img\s*\{[^}]*float:\s*none/', $hdr ) );
+$ok( 'the mini cart item places thumbnail, details and remove button in three columns', 1 === preg_match( '/\.woocommerce-mini-cart-item\s*\{[^}]*grid-template-columns:\s*var\(--minicart-thumb\) 1fr auto/', $hdr ) );
+$ok( 'the remove button is a centred square, so its hover circle is round', 1 === preg_match( '/\.woocommerce-mini-cart-item \.remove\s*\{[^}]*border-radius:\s*50%[^}]*height:\s*1\.5rem[^}]*justify-content:\s*center[^}]*width:\s*1\.5rem/s', $hdr ) );
+$ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart\s*\{\s*position:\s*static/', $hdr ) );
+$ok( 'the bulk notice lists variations in a row, not a stacked list', 1 === preg_match( '/ul\.wcbvp-cart-variation-list\s*\{[^}]*display:\s*flex[^}]*list-style:\s*none/s', $src ) );
+
+// Checkout terms links, and the quote limit's product page pieces.
+$ok( 'the terms and privacy links on checkout are black, not the white link colour', 1 === preg_match( '/\.wc-block-checkout__terms a\s*\{[^}]*color:\s*var\(--wp--preset--color--tertiary\)/', $src ) );
+$ok( 'and the built stylesheet carries it', false !== strpos( $dist, '.wc-block-checkout__terms a{color:var(--wp--preset--color--tertiary)' ) );
+$quote_js = file_get_contents( get_theme_file_path( 'assets/js/quote-limit.js' ) );
+$ok( 'the product page script blocks a submit over the limit', false !== strpos( $quote_js, "addEventListener(\n\t\t'submit'" ) || false !== strpos( $quote_js, "'submit'" ) );
+$ok( 'and the quote notice is styled', false !== strpos( $dist, '.tbb-quote-notice' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }

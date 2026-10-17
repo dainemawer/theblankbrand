@@ -417,6 +417,13 @@
 	font-weight: 600;
 }
 
+/* The selected size has the same specificity as the hover rule above and comes
+   after it, so on hover it filled black and kept its black text. */
+.tbb-size.is-active:hover,
+.tbb-size.is-active:focus-visible {
+	color: var(--wp--preset--color--primary);
+}
+
 /* Unavailable for the selected colour (no stock / not offered) — greyed and
    non-interactive, clearly distinct from the active-looking unselected state. */
 .tbb-size:disabled,
@@ -432,6 +439,34 @@
 	background: transparent;
 	border-color: var(--wp--preset--color--secondary);
 	color: var(--wp--preset--color--secondary);
+}
+
+/* WooCommerce prints the chosen variation's price a second time above the
+   quantity box. The price under the title follows the selection instead (see
+   colour-swatches.js), so hide the copy. Stock messages in the same box stay. */
+.woocommerce div.product form.variations_form .woocommerce-variation-price {
+	display: none;
+}
+
+/* 100 or more of one style is a quote, not an online order (see QuoteLimit.php
+   and quote-limit.js). The message sits under the quantity and button, and the
+   button is dimmed while the number is over the limit. */
+.tbb-quote-notice {
+	border-left: 3px solid var(--wp--preset--color--error);
+	flex: 1 1 100%;
+	font-size: var(--wp--preset--font-size--sm);
+	margin: var(--wp--custom--spacing--12) 0 0;
+	padding-left: var(--wp--custom--spacing--12);
+}
+
+.tbb-quote-notice a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.woocommerce div.product .single_add_to_cart_button.tbb-quote-blocked {
+	cursor: not-allowed;
+	opacity: 0.4;
 }
 
 /* Add-to-cart row: quantity stepper + add-to-cart button, divided from the
@@ -729,6 +764,34 @@ body .woocommerce-message::after {
 	transform: translateY(-50%);
 }
 
+/* The Bulk Order Grid's notice ends in a list of what was added. A stacked
+   bullet list is tall, and in the one-row layout above it pushed off the right
+   edge of the page. Run the variations along the line instead, separated by
+   dots (the names already contain commas), and let the notice wrap when they
+   do not fit. */
+.woocommerce-notices-wrapper .woocommerce-message:has(.wcbvp-cart-variation-list) {
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	row-gap: var(--wp--custom--spacing--8);
+}
+
+.woocommerce-notices-wrapper .woocommerce-message ul.wcbvp-cart-variation-list {
+	display: flex;
+	flex: 1 1 auto;
+	flex-wrap: wrap;
+	list-style: none;
+	margin: 0;
+	min-width: 0;
+	padding: 0;
+	row-gap: var(--wp--custom--spacing--4);
+}
+
+.woocommerce-notices-wrapper .woocommerce-message .wcbvp-cart-variation-list li:not(:last-child)::after {
+	content: "\00b7";
+	margin-inline: 0.6em;
+	opacity: 0.6;
+}
+
 /* Notice action button (e.g. "View cart") — white-on-black, with a white
    outline so it stays legible against the black panel. */
 .woocommerce-notices-wrapper .button,
@@ -747,6 +810,20 @@ body .woocommerce-message::after {
 	border: 2px solid var(--wp--preset--color--tertiary);
 	border-radius: var(--wp--custom--border-radius--full);
 	color: var(--wp--preset--color--tertiary);
+}
+
+/* Links in the terms line above Place order. The theme's link colour is white,
+   which is right in the black header and footer and left these two invisible on
+   the white checkout. Black, underlined, and a mid grey on hover (the global
+   hover colour is a light grey that would fade them out again). */
+.wc-block-checkout__terms a {
+	color: var(--wp--preset--color--tertiary);
+	text-decoration: underline;
+}
+
+.wc-block-checkout__terms a:hover,
+.wc-block-checkout__terms a:focus-visible {
+	color: var(--wp--preset--color--muted);
 }
 
 /* Sticky checkout summary — the sticky element is the sidebar column (WooCommerce

@@ -442,6 +442,40 @@ $is( 'effective_tier_price rejects a tier above the base', 1, BlankBrandTheme\Bu
 $is( 'effective_tier_price rejects zero', 1, BlankBrandTheme\BulkPricing::effective_tier_price( 0, 150 ) === null ? 1 : 0 );
 $is( 'effective_tier_price keeps a real discount', 170, BlankBrandTheme\BulkPricing::effective_tier_price( 170, 190 ) );
 
+echo "\nCart reloaded from the session (what the mini cart prints)\n";
+// An ordinary page load rebuilds the cart's products at their normal price and,
+// when the saved totals are still good, does not recalculate them. The mini cart
+// then printed "50 x R150" beside a subtotal worked out at the tier price.
+// Reproduce that: price the line, put the normal price back as a reload does,
+// then fire the hook WooCommerce fires once it has loaded the cart.
+// $page is reused above for the sale-price cases, so take the parent from the variation.
+$parent_id = (int) wp_get_post_parent_id( $vars[0] );
+WC()->cart->empty_cart();
+WC()->cart->add_to_cart( $parent_id, 50, $vars[0] );
+WC()->cart->calculate_totals();
+$base = (float) wc_get_product( $vars[0] )->get_price( 'edit' );
+$tier = 0.0;
+foreach ( WC()->cart->get_cart() as $line ) {
+	$tier = (float) $line['data']->get_price( 'edit' );
+	$line['data']->set_price( (string) $base );
+}
+$is( 'the tier is cheaper than the normal price, so this test can fail', true, $tier > 0 && $tier < $base );
+foreach ( WC()->cart->get_cart() as $line ) {
+	$is( 'after a reload the line holds the normal price (the bug)', $base, (float) $line['data']->get_price( 'edit' ) );
+}
+do_action( 'woocommerce_cart_loaded_from_session', WC()->cart );
+foreach ( WC()->cart->get_cart() as $line ) {
+	$is( 'once the cart is loaded from the session the line holds the tier price', $tier, (float) $line['data']->get_price( 'edit' ) );
+}
+ob_start();
+woocommerce_mini_cart();
+$mini      = ob_get_clean();
+$mini_text = html_entity_decode( wp_strip_all_tags( $mini ) );
+$plain     = static fn( float $amount ): string => html_entity_decode( wp_strip_all_tags( wc_price( $amount ) ) );
+$is( 'the mini cart prints 50 x the tier price', 1, false !== strpos( $mini_text, '50 × ' . $plain( $tier ) ) ? 1 : 0 );
+$is( 'and not the normal price', 1, false === strpos( $mini_text, '50 × ' . $plain( $base ) ) ? 1 : 0 );
+WC()->cart->empty_cart();
+
 $put_back();
 
 printf( "\n%d passed, %d failed\n", $pass, $fail );
