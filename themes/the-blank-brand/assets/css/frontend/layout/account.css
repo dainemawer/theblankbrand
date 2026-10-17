@@ -1,0 +1,687 @@
+/* ==========================================================================
+   My Account, login, lost password, and the order pages
+
+   These are WooCommerce's own templates (the theme has no overrides for them),
+   so everything here is CSS on WooCommerce's classes. `.account-page` is the
+   container index.php puts around the My Account shortcode. The order details
+   table and the order overview are shared with the thank-you page, which is a
+   different page, so those rules hang off `.woocommerce-order` instead.
+   ========================================================================== */
+
+.account-page,
+.woocommerce-order {
+	--account-rule: var(--wp--preset--color--light);
+	--account-tint: #f5f5f5;
+}
+
+.account-page .page-title {
+	margin-bottom: var(--wp--custom--spacing--32);
+}
+
+/* Layout: navigation on the left, content on the right
+   ========================================================================== */
+
+/* WooCommerce floats these at 30% / 68%. Grid instead, so the navigation takes
+   what it needs and the content takes the rest. */
+body.woocommerce-account .woocommerce:has(> .woocommerce-MyAccount-navigation) {
+	align-items: start;
+	display: grid;
+	gap: var(--wp--custom--spacing--32) var(--wp--custom--spacing--48);
+	grid-template-columns: 14rem minmax(0, 1fr);
+}
+
+/* WooCommerce's clearfix on `.woocommerce` is two empty boxes; in a grid the first
+   would take the navigation's column. */
+body.woocommerce-account .woocommerce::before,
+body.woocommerce-account .woocommerce::after {
+	content: none;
+}
+
+body.woocommerce-account .woocommerce-MyAccount-navigation,
+body.woocommerce-account .woocommerce-MyAccount-content {
+	float: none;
+	width: auto;
+}
+
+body.woocommerce-account .woocommerce-MyAccount-content {
+	min-width: 0;
+}
+
+@media (max-width: 47.999em) {
+	body.woocommerce-account .woocommerce:has(> .woocommerce-MyAccount-navigation) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+/* Navigation
+   ========================================================================== */
+
+.woocommerce-MyAccount-navigation ul {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--custom--spacing--4);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.woocommerce-MyAccount-navigation a {
+	border-radius: var(--wp--custom--border-radius--md);
+	color: var(--wp--preset--color--tertiary);
+	display: block;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	padding: var(--wp--custom--spacing--12) var(--wp--custom--spacing--16);
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.woocommerce-MyAccount-navigation a:hover,
+.woocommerce-MyAccount-navigation a:focus-visible {
+	background-color: var(--account-tint);
+	color: var(--wp--preset--color--tertiary);
+}
+
+.woocommerce-MyAccount-navigation .is-active a,
+.woocommerce-MyAccount-navigation .is-active a:hover {
+	background-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+/* Log out is a different kind of link, so it sits apart. */
+.woocommerce-MyAccount-navigation-link--customer-logout {
+	border-top: 1px solid var(--account-rule);
+	margin-top: var(--wp--custom--spacing--8);
+	padding-top: var(--wp--custom--spacing--8);
+}
+
+.woocommerce-MyAccount-navigation-link--customer-logout a {
+	color: var(--wp--preset--color--muted);
+}
+
+/* On a phone the navigation becomes one row of pills that scrolls sideways. */
+@media (max-width: 47.999em) {
+	.woocommerce-MyAccount-navigation ul {
+		flex-direction: row;
+		gap: var(--wp--custom--spacing--8);
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: var(--wp--custom--spacing--4);
+	}
+
+	.woocommerce-MyAccount-navigation li {
+		flex: 0 0 auto;
+	}
+
+	.woocommerce-MyAccount-navigation a {
+		border: 1px solid var(--account-rule);
+		border-radius: var(--wp--custom--border-radius--full);
+		white-space: nowrap;
+	}
+
+	.woocommerce-MyAccount-navigation-link--customer-logout {
+		border-top: 0;
+		margin-top: 0;
+		padding-top: 0;
+	}
+}
+
+/* Content: type and links
+   ========================================================================== */
+
+.woocommerce-MyAccount-content h2,
+.woocommerce-MyAccount-content h3,
+.woocommerce-order h2,
+.account-page .woocommerce > h2 {
+	font-size: var(--wp--preset--font-size--xl);
+	letter-spacing: 0.04em;
+	margin: 0 0 var(--wp--custom--spacing--16);
+	text-transform: uppercase;
+}
+
+.woocommerce-MyAccount-content p {
+	margin-block: 0 var(--wp--custom--spacing--16);
+}
+
+/* Black text links are easy to lose in grey body copy, so underline the ones in
+   running text. Buttons and the navigation keep their own look. */
+.woocommerce-MyAccount-content a:not(.button),
+.woocommerce-order a:not(.button),
+.woocommerce-LostPassword a {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
+}
+
+.woocommerce-MyAccount-content a:not(.button):hover,
+.woocommerce-order a:not(.button):hover,
+.woocommerce-LostPassword a:hover {
+	color: var(--wp--preset--color--muted);
+}
+
+/* "Order #1 was placed on ... and is currently ...": bold, not highlighted. */
+.woocommerce-MyAccount-content mark {
+	background: none;
+	color: var(--wp--preset--color--tertiary);
+	font-weight: 600;
+}
+
+/* Buttons
+   ========================================================================== */
+
+/* Same black pill as Add to cart and the 404 page. */
+.account-page .woocommerce .button,
+.account-page .woocommerce button.button,
+.account-page .woocommerce input.button,
+.woocommerce-order .button {
+	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: var(--wp--custom--border-radius--full);
+	color: var(--wp--preset--color--primary);
+	cursor: pointer;
+	display: inline-block;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	line-height: 1.2;
+	padding: 0.875rem 2rem;
+	text-align: center;
+	text-decoration: none;
+	text-transform: uppercase;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.account-page .woocommerce .button:hover,
+.account-page .woocommerce .button:focus-visible,
+.woocommerce-order .button:hover,
+.woocommerce-order .button:focus-visible {
+	background-color: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
+}
+
+.account-page .woocommerce .button:focus-visible,
+.woocommerce-order .button:focus-visible {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 2px;
+}
+
+/* Buttons that sit inside a table row are the quieter, outlined kind. */
+.account-page .woocommerce td .button {
+	background-color: transparent;
+	color: var(--wp--preset--color--tertiary);
+	font-size: var(--wp--preset--font-size--xs);
+	padding: 0.5rem 1.25rem;
+}
+
+.account-page .woocommerce td .button:hover,
+.account-page .woocommerce td .button:focus-visible {
+	background-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--primary);
+}
+
+/* Forms
+   ========================================================================== */
+
+.account-page .woocommerce form .form-row {
+	margin: 0 0 var(--wp--custom--spacing--16);
+	padding: 0;
+}
+
+/* WooCommerce's clearfix on a form row adds two empty boxes, which a flex row then
+   spaces around. */
+.account-page .woocommerce form .form-row::before,
+.account-page .woocommerce form .form-row::after {
+	content: none;
+}
+
+.account-page .woocommerce form label {
+	color: var(--wp--preset--color--tertiary);
+	display: block;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--xs);
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	line-height: 1.4;
+	margin-bottom: var(--wp--custom--spacing--8);
+	text-transform: uppercase;
+}
+
+.account-page .woocommerce form .required {
+	color: var(--wp--preset--color--error);
+	text-decoration: none;
+}
+
+.account-page .woocommerce form .input-text,
+.account-page .woocommerce form select,
+.account-page .woocommerce form textarea {
+	appearance: none;
+	background-color: var(--wp--preset--color--primary);
+	border: 2px solid var(--wp--preset--color--tertiary);
+	border-radius: 0;
+	box-sizing: border-box;
+	color: var(--wp--preset--color--tertiary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--md);
+	line-height: 1.4;
+	padding: 0.875rem 1rem;
+	width: 100%;
+}
+
+.account-page .woocommerce form select {
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23000' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+	background-position: right 1rem center;
+	background-repeat: no-repeat;
+	cursor: pointer;
+	padding-right: 2.75rem;
+}
+
+.account-page .woocommerce form .input-text:focus,
+.account-page .woocommerce form select:focus,
+.account-page .woocommerce form textarea:focus {
+	outline: 2px solid var(--wp--preset--color--tertiary);
+	outline-offset: 2px;
+}
+
+/* The little "show password" eye WooCommerce adds on the right. */
+.account-page .woocommerce .password-input {
+	display: block;
+	position: relative;
+}
+
+.account-page .woocommerce .show-password-input {
+	color: var(--wp--preset--color--tertiary);
+}
+
+.account-page .woocommerce form em,
+.account-page .woocommerce form .description,
+.account-page .woocommerce form span > em {
+	color: var(--wp--preset--color--muted);
+	display: block;
+	font-size: var(--wp--preset--font-size--xs);
+	margin-top: var(--wp--custom--spacing--8);
+}
+
+.account-page .woocommerce form fieldset {
+	border: 1px solid var(--account-rule);
+	border-radius: var(--wp--custom--border-radius--md);
+	margin: var(--wp--custom--spacing--16) 0;
+	padding: var(--wp--custom--spacing--24);
+}
+
+.account-page .woocommerce form legend {
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	padding-inline: var(--wp--custom--spacing--8);
+	text-transform: uppercase;
+}
+
+/* Two fields side by side (first/last name, billing fields), one column on a phone.
+   WooCommerce does this with floats and a 47% width; grid is steadier. */
+.account-page .woocommerce .woocommerce-EditAccountForm,
+.account-page .woocommerce .woocommerce-address-fields__field-wrapper {
+	column-gap: var(--wp--custom--spacing--24);
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.account-page .woocommerce .woocommerce-EditAccountForm > *,
+.account-page .woocommerce .woocommerce-address-fields__field-wrapper > * {
+	grid-column: 1 / -1;
+}
+
+.account-page .woocommerce .woocommerce-EditAccountForm > .form-row-first,
+.account-page .woocommerce .woocommerce-EditAccountForm > .form-row-last,
+.account-page .woocommerce .woocommerce-address-fields__field-wrapper > .form-row-first,
+.account-page .woocommerce .woocommerce-address-fields__field-wrapper > .form-row-last {
+	float: none;
+	grid-column: auto;
+	width: auto;
+}
+
+.account-page .woocommerce .woocommerce-EditAccountForm > .clear,
+.account-page .woocommerce .woocommerce-address-fields__field-wrapper > .clear {
+	display: none;
+}
+
+@media (max-width: 47.999em) {
+	.account-page .woocommerce .woocommerce-EditAccountForm > .form-row-first,
+	.account-page .woocommerce .woocommerce-EditAccountForm > .form-row-last,
+	.account-page .woocommerce .woocommerce-address-fields__field-wrapper > .form-row-first,
+	.account-page .woocommerce .woocommerce-address-fields__field-wrapper > .form-row-last {
+		grid-column: 1 / -1;
+	}
+}
+
+/* Login, register, lost and reset password
+   ========================================================================== */
+
+/* A card for each of the four forms. */
+.account-page .woocommerce form.login,
+.account-page .woocommerce form.register,
+.account-page .woocommerce form.lost_reset_password {
+	background-color: var(--wp--preset--color--primary);
+	border: 1px solid var(--account-rule);
+	border-radius: var(--wp--custom--border-radius--md);
+	margin: 0 0 var(--wp--custom--spacing--24);
+	padding: var(--wp--custom--spacing--32);
+}
+
+/* With registration off there is just the one form; keep it a readable width
+   instead of stretching across the page. */
+.account-page .woocommerce > form.login,
+.account-page .woocommerce > form.lost_reset_password {
+	max-width: 30rem;
+}
+
+/* With registration on, login and register sit side by side. */
+.account-page .woocommerce #customer_login {
+	display: grid;
+	gap: var(--wp--custom--spacing--32);
+	grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+}
+
+.account-page .woocommerce #customer_login > .u-column1,
+.account-page .woocommerce #customer_login > .u-column2 {
+	float: none;
+	width: auto;
+}
+
+/* "Remember me" on the left, Log in on the right. */
+.account-page .woocommerce form.login .form-row:has(.woocommerce-form-login__submit) {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--16);
+	justify-content: space-between;
+}
+
+.account-page .woocommerce form.login .woocommerce-form-login__rememberme {
+	align-items: center;
+	display: inline-flex;
+	gap: var(--wp--custom--spacing--8);
+	letter-spacing: 0.04em;
+	margin: 0;
+	text-transform: none;
+}
+
+.account-page .woocommerce form.login .woocommerce-form-login__submit {
+	float: none;
+	margin: 0;
+}
+
+.account-page .woocommerce input[type="checkbox"] {
+	accent-color: var(--wp--preset--color--tertiary);
+	height: 1.125rem;
+	margin: 0;
+	width: 1.125rem;
+}
+
+.woocommerce-LostPassword {
+	font-size: var(--wp--preset--font-size--sm);
+	margin: var(--wp--custom--spacing--24) 0 0;
+}
+
+/* Lists of things: orders, order details, downloads
+   ========================================================================== */
+
+.account-page .woocommerce table.shop_table,
+.woocommerce-order table.shop_table {
+	border: 0;
+	border-collapse: collapse;
+	border-radius: 0;
+	margin: 0 0 var(--wp--custom--spacing--32);
+	width: 100%;
+}
+
+.account-page .woocommerce table.shop_table th,
+.account-page .woocommerce table.shop_table td,
+.woocommerce-order table.shop_table th,
+.woocommerce-order table.shop_table td {
+	border: 0;
+	border-bottom: 1px solid var(--account-rule);
+	padding: var(--wp--custom--spacing--16) var(--wp--custom--spacing--12);
+	text-align: left;
+	vertical-align: middle;
+}
+
+.account-page .woocommerce table.shop_table thead th,
+.woocommerce-order table.shop_table thead th {
+	border-bottom: 2px solid var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--tertiary);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--xs);
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+/* The footer rows (subtotal, shipping, VAT, total) are labels and figures. */
+.account-page .woocommerce table.shop_table tfoot th,
+.woocommerce-order table.shop_table tfoot th {
+	font-weight: 600;
+	text-transform: none;
+}
+
+.account-page .woocommerce table.shop_table tfoot tr:last-child th,
+.account-page .woocommerce table.shop_table tfoot tr:last-child td,
+.woocommerce-order table.shop_table tfoot tr:last-child th,
+.woocommerce-order table.shop_table tfoot tr:last-child td {
+	border-bottom: 0;
+}
+
+.account-page .woocommerce table.shop_table tfoot tr:has(+ tr:last-child) th,
+.account-page .woocommerce table.shop_table tfoot tr:has(+ tr:last-child) td,
+.woocommerce-order table.shop_table tfoot tr:has(+ tr:last-child) th,
+.woocommerce-order table.shop_table tfoot tr:has(+ tr:last-child) td {
+	border-bottom: 1px solid var(--account-rule);
+}
+
+/* On a phone WooCommerce turns each order into a stack of "Label: value" rows, but
+   hides the order number (it is a header cell, which its small-screen rule drops).
+   Without it nobody can tell the orders apart, so show it like the others. */
+@media (max-width: 768px) {
+	.account-page .woocommerce table.shop_table_responsive tbody th.woocommerce-orders-table__cell-order-number {
+		display: block;
+		text-align: right;
+	}
+
+	.account-page .woocommerce table.shop_table_responsive tbody th.woocommerce-orders-table__cell-order-number::before {
+		content: attr(data-title) ": ";
+		float: left;
+		font-weight: 600;
+	}
+}
+
+.woocommerce-table__product-name a,
+.woocommerce-orders-table__cell-order-number a {
+	color: var(--wp--preset--color--tertiary);
+	font-weight: 600;
+}
+
+.woocommerce-table__product-name .product-quantity {
+	color: var(--wp--preset--color--muted);
+	font-weight: 400;
+}
+
+.woocommerce-table .wc-item-meta,
+.woocommerce-table .wc-item-meta li {
+	color: var(--wp--preset--color--muted);
+	font-size: var(--wp--preset--font-size--sm);
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+/* Addresses, on the Addresses page and in the order details
+   ========================================================================== */
+
+.account-page .woocommerce .woocommerce-Addresses,
+.woocommerce-order .woocommerce-columns--addresses {
+	display: grid;
+	gap: var(--wp--custom--spacing--24);
+	grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+
+.account-page .woocommerce .woocommerce-Addresses::before,
+.account-page .woocommerce .woocommerce-Addresses::after,
+.woocommerce-order .woocommerce-columns--addresses::before,
+.woocommerce-order .woocommerce-columns--addresses::after {
+	content: none;
+}
+
+.account-page .woocommerce .woocommerce-Addresses > .woocommerce-Address,
+.woocommerce-order .woocommerce-columns--addresses > .woocommerce-column {
+	float: none;
+	width: auto;
+}
+
+.woocommerce-MyAccount-content address,
+.woocommerce-order address {
+	border: 1px solid var(--account-rule);
+	border-radius: var(--wp--custom--border-radius--md);
+	font-style: normal;
+	line-height: 1.7;
+	padding: var(--wp--custom--spacing--24);
+}
+
+.woocommerce-Address-title {
+	align-items: baseline;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--8) var(--wp--custom--spacing--16);
+	justify-content: space-between;
+}
+
+.account-page .woocommerce .woocommerce-Address-title::before,
+.account-page .woocommerce .woocommerce-Address-title::after {
+	content: none;
+}
+
+.account-page .woocommerce .woocommerce-Address-title h2,
+.account-page .woocommerce .woocommerce-Address-title .edit {
+	float: none;
+}
+
+.account-page .woocommerce .woocommerce-Address-title h2 {
+	margin: 0 0 var(--wp--custom--spacing--16);
+}
+
+.account-page .woocommerce .woocommerce-Address-title .edit {
+	font-size: var(--wp--preset--font-size--sm);
+	margin-bottom: var(--wp--custom--spacing--16);
+}
+
+.woocommerce-customer-details--email {
+	margin: var(--wp--custom--spacing--8) 0 0;
+}
+
+/* Order updates (the notes a shop adds to an order) */
+.woocommerce-OrderUpdates {
+	list-style: none;
+	margin: 0 0 var(--wp--custom--spacing--32);
+	padding: 0;
+}
+
+.woocommerce-OrderUpdate {
+	border-bottom: 1px solid var(--account-rule);
+	margin: 0;
+	padding: var(--wp--custom--spacing--16) 0;
+}
+
+.woocommerce-OrderUpdate-meta {
+	color: var(--wp--preset--color--muted);
+	font-size: var(--wp--preset--font-size--sm);
+	margin: 0 0 var(--wp--custom--spacing--4);
+}
+
+/* Empty states ("No order has been made yet", "No downloads available yet")
+   ========================================================================== */
+
+/* They sit straight in the content, outside the notices wrapper, so they are not the
+   black panels. A light box with the action on the right. */
+.woocommerce-MyAccount-content > .woocommerce-info,
+.woocommerce-MyAccount-content > .woocommerce-message,
+.woocommerce-MyAccount-content > .woocommerce-error {
+	align-items: center;
+	background-color: var(--account-tint);
+	border: 1px solid var(--account-rule);
+	border-radius: var(--wp--custom--border-radius--md);
+	color: var(--wp--preset--color--tertiary);
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wp--custom--spacing--16);
+	justify-content: space-between;
+	margin: 0 0 var(--wp--custom--spacing--24);
+	padding: var(--wp--custom--spacing--16) var(--wp--custom--spacing--24);
+}
+
+.woocommerce-MyAccount-content > .woocommerce-info::before,
+.woocommerce-MyAccount-content > .woocommerce-message::before,
+.woocommerce-MyAccount-content > .woocommerce-error::before {
+	content: none;
+}
+
+.woocommerce-MyAccount-content > .woocommerce-info .button,
+.woocommerce-MyAccount-content > .woocommerce-message .button {
+	float: none;
+	margin: 0;
+}
+
+/* Page links under a long orders list */
+.woocommerce-pagination--without-numbers {
+	display: flex;
+	gap: var(--wp--custom--spacing--16);
+	justify-content: space-between;
+}
+
+/* Thank-you page
+   ========================================================================== */
+
+.woocommerce-thankyou-order-received {
+	font-size: var(--wp--preset--font-size--xl);
+	font-weight: 600;
+	margin: 0 0 var(--wp--custom--spacing--24);
+}
+
+/* The overview is a row of five facts: order number, date, email, total, payment. */
+.woocommerce .woocommerce-order ul.woocommerce-order-overview {
+	display: grid;
+	gap: var(--wp--custom--spacing--16);
+	grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+	list-style: none;
+	margin: 0 0 var(--wp--custom--spacing--40);
+	padding: 0;
+}
+
+.woocommerce .woocommerce-order ul.woocommerce-order-overview::before,
+.woocommerce .woocommerce-order ul.woocommerce-order-overview::after {
+	content: none;
+}
+
+.woocommerce .woocommerce-order ul.woocommerce-order-overview li {
+	border: 1px solid var(--account-rule);
+	border-radius: var(--wp--custom--border-radius--md);
+	color: var(--wp--preset--color--muted);
+	float: none;
+	font-size: var(--wp--preset--font-size--xs);
+	letter-spacing: 0.06em;
+	line-height: 1.4;
+	margin: 0;
+	overflow-wrap: anywhere;
+	padding: var(--wp--custom--spacing--16);
+	text-transform: uppercase;
+}
+
+.woocommerce .woocommerce-order ul.woocommerce-order-overview li strong {
+	color: var(--wp--preset--color--tertiary);
+	display: block;
+	font-size: var(--wp--preset--font-size--md);
+	letter-spacing: 0;
+	margin-top: var(--wp--custom--spacing--4);
+	text-transform: none;
+}
