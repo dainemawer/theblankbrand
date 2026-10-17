@@ -360,6 +360,37 @@ $r = $settle(
 $yes( 'a cart that reached 100 is brought back under it (never 100 or more)', array_sum( $r ) < 100 && array_sum( $r ) > 0 );
 $_SERVER['REQUEST_URI'] = '/';
 
+echo "\nThe refusal message where markup is stripped\n";
+// The block cart goes through the REST API, which strips HTML from a notice, so a link
+// would leave the customer reading "get a quote" with no address. Plain text there.
+$fresh();
+$add( $parent, 60, $vars[0] );
+wc_clear_notices();
+$notice = static function () {
+	$n = wc_get_notices( 'error' );
+	return $n ? (string) $n[0]['notice'] : '';
+};
+$apply  = static fn() => apply_filters( 'woocommerce_add_to_cart_validation', true, $parent, 60, $vars[1], [] );
+
+$is( 'on a normal page the add is refused', false, $apply() );
+$html_msg = $notice();
+$yes( '  with the address as a link', false !== strpos( $html_msg, '<a href="mailto:info@theblankbrand.co.za">' ) );
+
+wc_clear_notices();
+$_SERVER['REQUEST_URI'] = '/wp-json/wc/store/v1/cart/add-item';
+$is( 'through the REST API the add is refused too', false, $apply() );
+$rest_msg = $notice();
+$yes( '  with the address written out, so it survives markup stripping', false !== strpos( wp_strip_all_tags( $rest_msg ), 'info@theblankbrand.co.za' ) );
+$yes( '  and no markup to strip', wp_strip_all_tags( $rest_msg ) === $rest_msg );
+$add( $parent, 30, $vars[1] ); // a second line, so raising the first can cross the limit
+wc_clear_notices();
+$line_a      = array_key_first( WC()->cart->get_cart() );
+$passed_vals = apply_filters( 'woocommerce_update_cart_validation', true, $line_a, WC()->cart->get_cart()[ $line_a ], 90 );
+$is( 'a cart update through the REST API that crosses the limit is refused', false, $passed_vals );
+$yes( '  with the address written out', false !== strpos( $notice(), 'info@theblankbrand.co.za' ) && wp_strip_all_tags( $notice() ) === $notice() );
+$_SERVER['REQUEST_URI'] = '/';
+wc_clear_notices();
+
 // ---------------------------------------------------------------- products without a limit
 
 echo "\nProducts with no quote threshold\n";

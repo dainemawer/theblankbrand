@@ -102,6 +102,21 @@ class QuoteLimit {
 	}
 
 	/**
+	 * The message for a notice, in the form that survives where it is shown.
+	 *
+	 * Classic pages print a notice as HTML, so the address can be a link. The block
+	 * cart and block buttons go through the REST API, which strips the markup from a
+	 * notice, and the customer would read "get a quote" with no address to write to.
+	 * There the address is spelled out.
+	 *
+	 * @param int $from Quantity at which a quote is needed.
+	 * @return string
+	 */
+	protected function notice_message( int $from ): string {
+		return self::message( $from, ! WC()->is_rest_api_request() );
+	}
+
+	/**
 	 * The parent product id for a product or a variation.
 	 *
 	 * @param \WC_Product $product Product or variation.
@@ -164,7 +179,7 @@ class QuoteLimit {
 		$from       = $passed ? self::quote_from( $product_id ) : 0;
 
 		if ( $from && $this->in_cart( $product_id ) + (int) $quantity >= $from ) {
-			wc_add_notice( self::message( $from ), 'error' );
+			wc_add_notice( $this->notice_message( $from ), 'error' );
 			return false;
 		}
 
@@ -185,7 +200,7 @@ class QuoteLimit {
 		$from       = $passed ? self::quote_from( $product_id ) : 0;
 
 		if ( $from && $this->in_cart( $product_id, (string) $cart_item_key ) + (int) $quantity >= $from ) {
-			wc_add_notice( self::message( $from ), 'error' );
+			wc_add_notice( $this->notice_message( $from ), 'error' );
 			return false;
 		}
 
@@ -292,7 +307,7 @@ class QuoteLimit {
 			$from = self::quote_from( $product_id );
 
 			if ( $from && $this->in_cart( $product_id ) + $added >= $from ) {
-				wc_add_notice( self::message( $from ), 'error' );
+				wc_add_notice( $this->notice_message( $from ), 'error' );
 				unset( $_POST['quantity'] );
 				return;
 			}
@@ -354,7 +369,7 @@ class QuoteLimit {
 					__( 'You have %2$d of %1$s in your cart. ', 'blank-brand-theme' ),
 					$info['name'],
 					$info['quantity']
-				) . self::message( $info['from'] ),
+				) . $this->notice_message( $info['from'] ),
 				'error'
 			);
 		}
