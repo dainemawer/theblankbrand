@@ -13,6 +13,8 @@ const TOGGLE_SEL       = '.nav-dropdown-toggle';
 const PARENT_SEL       = '.menu-item-has-children';
 const CART_TOGGLE_SEL  = '.site-header__cart-toggle';
 const CART_PANEL_SEL   = '#site-header-minicart';
+const ACCOUNT_TOGGLE_SEL = '.site-header__account-toggle';
+const ACCOUNT_PANEL_SEL  = '#site-header-account-menu';
 
 const MENU_TOGGLE_SEL  = '.site-header__menu-toggle';
 const NAV_CLOSE_SEL    = '.site-header__nav-close';
@@ -150,32 +152,34 @@ function initNavigation(): void {
 }
 
 /**
- * Minicart toggle.
+ * A button that shows and hides a panel in the header: opens on click, closes on an
+ * outside click, on Escape (focus returns to the button) and when Tab leaves the panel.
+ * The minicart and the account menu are both one of these.
  */
-function initMinicart(): void {
-	const toggle = document.querySelector<HTMLButtonElement>( CART_TOGGLE_SEL );
-	const panel  = document.querySelector<HTMLElement>( CART_PANEL_SEL );
+function initTogglePanel( toggleSel: string, panelSel: string ): void {
+	const toggle = document.querySelector<HTMLButtonElement>( toggleSel );
+	const panel  = document.querySelector<HTMLElement>( panelSel );
 
 	if ( ! toggle || ! panel ) return;
 
-	function openCart(): void {
+	function open(): void {
 		panel!.removeAttribute( 'hidden' );
 		toggle!.setAttribute( 'aria-expanded', 'true' );
 		// Move focus into the panel for screen readers
 		panel!.focus();
 	}
 
-	function closeCart(): void {
+	function close(): void {
 		panel!.setAttribute( 'hidden', '' );
 		toggle!.setAttribute( 'aria-expanded', 'false' );
 	}
 
-	function isCartOpen(): boolean {
+	function isPanelOpen(): boolean {
 		return toggle!.getAttribute( 'aria-expanded' ) === 'true';
 	}
 
 	toggle.addEventListener( 'click', () => {
-		isCartOpen() ? closeCart() : openCart();
+		isPanelOpen() ? close() : open();
 	} );
 
 	// Close on outside click
@@ -184,14 +188,14 @@ function initMinicart(): void {
 			! toggle.contains( e.target as Node ) &&
 			! panel.contains( e.target as Node )
 		) {
-			closeCart();
+			close();
 		}
 	} );
 
 	// Close on Escape
 	document.addEventListener( 'keydown', ( e ) => {
-		if ( e.key === 'Escape' && isCartOpen() ) {
-			closeCart();
+		if ( e.key === 'Escape' && isPanelOpen() ) {
+			close();
 			toggle.focus();
 		}
 	} );
@@ -200,7 +204,7 @@ function initMinicart(): void {
 	panel.addEventListener( 'focusout', ( e ) => {
 		const related = e.relatedTarget as Node | null;
 		if ( related && ! panel.contains( related ) && ! toggle.contains( related ) ) {
-			closeCart();
+			close();
 		}
 	} );
 
@@ -208,6 +212,21 @@ function initMinicart(): void {
 	if ( ! panel.hasAttribute( 'tabindex' ) ) {
 		panel.setAttribute( 'tabindex', '-1' );
 	}
+}
+
+/**
+ * Minicart toggle.
+ */
+function initMinicart(): void {
+	initTogglePanel( CART_TOGGLE_SEL, CART_PANEL_SEL );
+}
+
+/**
+ * Account menu toggle (only present for logged-in customers; a visitor gets a plain
+ * Log in link instead).
+ */
+function initAccountMenu(): void {
+	initTogglePanel( ACCOUNT_TOGGLE_SEL, ACCOUNT_PANEL_SEL );
 }
 
 /**
@@ -308,4 +327,4 @@ function initMobileNav(): void {
 	} );
 }
 
-export { initNavigation, initMinicart, initMobileNav };
+export { initNavigation, initMinicart, initAccountMenu, initMobileNav };

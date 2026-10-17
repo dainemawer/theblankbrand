@@ -179,7 +179,9 @@ body.admin-bar .site-header {
 	position: relative;
 }
 
-.site-header__cart-toggle {
+.site-header__cart-toggle,
+.site-header__account-toggle,
+.site-header__account-link {
 	align-items: center;
 	background: transparent;
 	border: none;
@@ -196,11 +198,15 @@ body.admin-bar .site-header {
 	transition: color 0.15s ease;
 }
 
-.site-header__cart-toggle:hover {
+.site-header__cart-toggle:hover,
+.site-header__account-toggle:hover,
+.site-header__account-link:hover {
 	color: var(--wp--preset--color--secondary);
 }
 
-.site-header__cart-toggle:focus-visible {
+.site-header__cart-toggle:focus-visible,
+.site-header__account-toggle:focus-visible,
+.site-header__account-link:focus-visible {
 	outline: 2px solid var(--wp--preset--color--primary);
 	outline-offset: 2px;
 }
@@ -246,6 +252,116 @@ body.admin-bar .site-header {
 	word-wrap: normal;
 }
 
+/* ==========================================================================
+   Account: a Log in link for visitors, a dropdown for customers
+   ========================================================================== */
+
+.site-header__actions {
+	align-items: center;
+	display: flex;
+	flex-shrink: 0;
+	gap: var(--wp--custom--spacing--4);
+}
+
+.site-header__account {
+	flex-shrink: 0;
+	position: relative;
+}
+
+.site-header__account-link {
+	text-decoration: none;
+}
+
+.site-header__account-icon {
+	display: block;
+	flex-shrink: 0;
+}
+
+/* The icon carries "Log in"; the word stays in the page for screen readers only. */
+.site-header__account-label {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+.site-header__account-menu {
+	background-color: var(--wp--preset--color--primary);
+	border: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	border-radius: var(--wp--custom--border-radius--md);
+	box-shadow: 0 8px 32px rgb(0 0 0 / 0.12);
+	color: var(--wp--preset--color--tertiary);
+	padding: var(--wp--custom--spacing--16);
+	position: absolute;
+	right: 0;
+	top: calc(100% + 8px);
+	width: 16rem;
+	z-index: 200;
+}
+
+.site-header__account-menu[hidden] {
+	display: none;
+}
+
+.site-header__account-name {
+	border-bottom: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	color: var(--wp--preset--color--muted);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	margin: 0 0 var(--wp--custom--spacing--8);
+	overflow-wrap: anywhere;
+	padding-bottom: var(--wp--custom--spacing--12);
+}
+
+.site-header__account-name strong {
+	color: var(--wp--preset--color--tertiary);
+	display: block;
+	font-weight: 600;
+}
+
+.site-header__account-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.site-header__account-list a,
+.site-header__account-logout {
+	align-items: center;
+	border-radius: var(--wp--custom--border-radius--sm);
+	color: var(--wp--preset--color--tertiary);
+	display: flex;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 500;
+	min-height: 2.75rem;
+	padding: var(--wp--custom--spacing--8) var(--wp--custom--spacing--12);
+	text-decoration: none;
+	transition: background-color 0.15s ease;
+}
+
+.site-header__account-list a:hover,
+.site-header__account-list a:focus-visible,
+.site-header__account-logout:hover,
+.site-header__account-logout:focus-visible {
+	background-color: #f2f2f2;
+	color: var(--wp--preset--color--tertiary);
+}
+
+.site-header__account-logout {
+	border-top: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	border-radius: 0;
+	font-weight: 600;
+	margin-top: var(--wp--custom--spacing--8);
+	padding-top: var(--wp--custom--spacing--8);
+}
+
 /* Minicart panel */
 
 .site-header__minicart {
@@ -266,20 +382,22 @@ body.admin-bar .site-header {
 	display: none;
 }
 
-/* WooCommerce mini cart list */
-.site-header__minicart .woocommerce-mini-cart {
+/* WooCommerce mini cart list. `.cart_list` is in the selector so this outranks
+   WooCommerce's `.woocommerce ul.cart_list { margin: 0 }` on pages that carry the
+   `woocommerce` body class. */
+.site-header__minicart .woocommerce-mini-cart.cart_list {
 	display: flex;
 	flex-direction: column;
 	gap: var(--wp--custom--spacing--16);
 	list-style: none;
-	margin: 0 0 var(--wp--custom--spacing--16);
+	margin: 0 0 var(--wp--custom--spacing--24);
 	max-height: 60vh;
 	overflow-y: auto;
 	padding: 0;
 }
 
-/* One row per item: the product link (thumbnail on the left, name beside it)
-   and the remove button on the right, with the quantity and price underneath
+/* One row per item: the remove button on the left, then the product link
+   (square thumbnail, name beside it), with the quantity and price underneath
    the name. Every child is placed explicitly, because WooCommerce prints the
    remove button first and its own stylesheet floats the thumbnail right. That
    stylesheet only applies on pages whose body carries the `woocommerce` class,
@@ -291,7 +409,7 @@ body.admin-bar .site-header {
 	border-bottom: 1px solid var(--wp--preset--color--border, #e5e7eb);
 	column-gap: var(--wp--custom--spacing--12);
 	display: grid;
-	grid-template-columns: var(--minicart-thumb) 1fr auto;
+	grid-template-columns: 1.5rem var(--minicart-thumb) 1fr;
 	padding-bottom: var(--wp--custom--spacing--16);
 	row-gap: var(--wp--custom--spacing--4);
 }
@@ -304,7 +422,7 @@ body.admin-bar .site-header {
 	font-family: var(--wp--preset--font-family--asap);
 	font-size: 0.875rem;
 	font-weight: 600;
-	grid-column: 1 / span 2;
+	grid-column: 2 / span 2;
 	grid-row: 1 / span 2;
 	grid-template-columns: var(--minicart-thumb) 1fr;
 	text-decoration: none;
@@ -313,13 +431,16 @@ body.admin-bar .site-header {
 /* The selector is long on purpose: WooCommerce floats the image with
    `.woocommerce ul.cart_list li img`, which this has to beat. */
 .site-header__minicart .woocommerce-mini-cart .woocommerce-mini-cart-item img {
-	aspect-ratio: 2 / 3;
+	aspect-ratio: 1;
 	border-radius: var(--wp--custom--border-radius--sm);
 	box-shadow: none;
 	float: none;
 	height: auto;
 	margin: 0;
 	object-fit: cover;
+	/* The photos are full-length studio shots with the face near the top, so crop
+	   from the top and the face stays in the square. */
+	object-position: center top;
 	width: var(--minicart-thumb);
 }
 
@@ -328,7 +449,7 @@ body.admin-bar .site-header {
 	color: var(--wp--preset--color--muted);
 	font-family: var(--wp--preset--font-family--asap);
 	font-size: 0.8125rem;
-	grid-column: 2;
+	grid-column: 3;
 	grid-row: 2;
 	margin: 0;
 	z-index: 1;
@@ -345,7 +466,7 @@ body.admin-bar .site-header {
 	color: var(--wp--preset--color--muted) !important;
 	display: flex;
 	font-size: 1.25rem;
-	grid-column: 3;
+	grid-column: 1;
 	grid-row: 1;
 	height: 1.5rem;
 	justify-content: center;
@@ -398,11 +519,14 @@ body.admin-bar .site-header {
 
 .site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward {
 	background-color: var(--wp--preset--color--tertiary);
+	border: 2px solid var(--wp--preset--color--tertiary);
 	color: var(--wp--preset--color--primary);
 }
 
-.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:hover {
-	background-color: var(--wp--preset--color--neutral);
+.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:hover,
+.site-header__minicart .woocommerce-mini-cart__buttons .button.wc-forward:focus-visible {
+	background-color: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 .site-header__minicart .woocommerce-mini-cart__buttons .checkout.wc-forward {
@@ -658,13 +782,19 @@ html.no-js .nav-dropdown-toggle {
 	   icon is not the right-most item here (the menu button sits after it), so a
 	   panel anchored to the icon ran off the left edge. Anchor it to the header,
 	   which spans the viewport, instead. */
-	.site-header__cart {
+	.site-header__cart,
+	.site-header__account {
 		position: static;
 	}
 
 	.site-header__minicart {
 		right: 1rem;
 		width: min(22rem, calc(100% - 2rem));
+	}
+
+	.site-header__account-menu {
+		right: 1rem;
+		width: min(18rem, calc(100% - 2rem));
 	}
 
 	/* No-JS fallback: the drawer can't be toggled without JS, so render

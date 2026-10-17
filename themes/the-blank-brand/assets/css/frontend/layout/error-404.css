@@ -17,13 +17,13 @@
 	padding: 0.875rem 2.5rem;
 	text-decoration: none;
 	text-transform: uppercase;
-	transition: opacity 0.2s ease;
+	transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .error-404__home:hover,
 .error-404__home:focus-visible {
-	color: var(--wp--preset--color--primary);
-	opacity: 0.85;
+	background-color: var(--wp--preset--color--primary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 @media (prefers-reduced-motion: reduce) {

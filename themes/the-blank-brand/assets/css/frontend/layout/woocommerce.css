@@ -342,11 +342,15 @@
 	letter-spacing: 0.08em;
 	padding: 0.875rem 2.5rem;
 	text-transform: uppercase;
-	transition: opacity 0.2s ease;
+	transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.woocommerce div.product .single_add_to_cart_button.button.alt:hover {
-	opacity: 0.85;
+/* Black buttons invert on hover: white fill, black text, black border. */
+.woocommerce div.product .single_add_to_cart_button.button.alt:hover:not(.tbb-quote-blocked),
+.woocommerce div.product .single_add_to_cart_button.button.alt:focus-visible:not(.tbb-quote-blocked) {
+	background-color: var(--wp--preset--color--primary);
+	border-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 /* Colour is chosen via the swatch chips, so hide the native colour dropdown row
@@ -792,6 +796,21 @@ body .woocommerce-message::after {
 	opacity: 0.6;
 }
 
+/* Links inside the black notice panels stay white, since the theme's link colour is
+   now dark for the white pages. (The button is handled just below.) */
+.woocommerce-notices-wrapper .woocommerce-message a:not(.button),
+.woocommerce-notices-wrapper .woocommerce-info a:not(.button),
+.woocommerce-notices-wrapper .woocommerce-error a:not(.button) {
+	color: var(--wp--preset--color--primary);
+	text-decoration: underline;
+}
+
+.woocommerce-notices-wrapper .woocommerce-message a:not(.button):hover,
+.woocommerce-notices-wrapper .woocommerce-info a:not(.button):hover,
+.woocommerce-notices-wrapper .woocommerce-error a:not(.button):hover {
+	color: var(--wp--preset--color--secondary);
+}
+
 /* Notice action button (e.g. "View cart") — white-on-black, with a white
    outline so it stays legible against the black panel. */
 .woocommerce-notices-wrapper .button,
@@ -799,6 +818,16 @@ body .woocommerce-message::after {
 	background-color: var(--wp--preset--color--tertiary);
 	border: 1px solid var(--wp--preset--color--primary);
 	color: var(--wp--preset--color--primary);
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.woocommerce-notices-wrapper .button:hover,
+.woocommerce-notices-wrapper a.button:hover,
+.woocommerce-notices-wrapper .button:focus-visible,
+.woocommerce-notices-wrapper a.button:focus-visible {
+	background-color: var(--wp--preset--color--primary);
+	border-color: var(--wp--preset--color--tertiary);
+	color: var(--wp--preset--color--tertiary);
 }
 
 /* Cart "Proceed to checkout" and checkout "Place order" submit buttons —

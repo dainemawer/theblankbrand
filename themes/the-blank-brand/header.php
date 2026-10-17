@@ -78,6 +78,57 @@
 					</nav>
 
 					<?php if ( class_exists( 'WooCommerce' ) ) : ?>
+					<div class="site-header__actions">
+					<div class="site-header__account">
+						<?php if ( is_user_logged_in() ) : ?>
+							<?php
+							$account_items = wc_get_account_menu_items();
+							unset( $account_items['customer-logout'] );
+							?>
+							<button
+								class="site-header__account-toggle"
+								aria-expanded="false"
+								aria-controls="site-header-account-menu"
+								aria-label="<?php esc_attr_e( 'Account menu', 'blank-brand-theme' ); ?>"
+							>
+								<svg class="site-header__account-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+									<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+									<circle cx="12" cy="7" r="4"/>
+								</svg>
+							</button>
+
+							<div
+								id="site-header-account-menu"
+								class="site-header__account-menu"
+								aria-label="<?php esc_attr_e( 'Your account', 'blank-brand-theme' ); ?>"
+								hidden
+							>
+								<p class="site-header__account-name">
+									<?php
+									/* translators: %s: the logged-in customer's display name. */
+									printf( esc_html__( 'Signed in as %s', 'blank-brand-theme' ), '<strong>' . esc_html( wp_get_current_user()->display_name ) . '</strong>' );
+									?>
+								</p>
+								<ul class="site-header__account-list">
+									<?php foreach ( $account_items as $endpoint => $label ) : ?>
+										<li>
+											<a href="<?php echo esc_url( wc_get_account_endpoint_url( $endpoint ) ); ?>"><?php echo esc_html( 'dashboard' === $endpoint ? __( 'My account', 'blank-brand-theme' ) : $label ); ?></a>
+										</li>
+									<?php endforeach; ?>
+								</ul>
+								<a class="site-header__account-logout" href="<?php echo esc_url( wc_logout_url() ); ?>"><?php esc_html_e( 'Log out', 'blank-brand-theme' ); ?></a>
+							</div>
+						<?php else : ?>
+							<a class="site-header__account-link" href="<?php echo esc_url( wc_get_page_permalink( 'myaccount' ) ); ?>">
+								<svg class="site-header__account-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+									<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+									<circle cx="12" cy="7" r="4"/>
+								</svg>
+								<span class="site-header__account-label"><?php esc_html_e( 'Log in', 'blank-brand-theme' ); ?></span>
+							</a>
+						<?php endif; ?>
+					</div>
+
 					<div class="site-header__cart">
 						<button
 							class="site-header__cart-toggle"
@@ -104,6 +155,7 @@
 								<?php woocommerce_mini_cart(); ?>
 							</div>
 						</div>
+					</div>
 					</div>
 					<?php endif; ?>
 
