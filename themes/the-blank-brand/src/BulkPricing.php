@@ -60,6 +60,11 @@ class BulkPricing implements ModuleInterface {
 		// cart read "50 × R150" next to a subtotal worked out at the tier price.
 		// Apply the tier here as well. It is safe to run twice.
 		add_action( 'woocommerce_cart_loaded_from_session', [ $this, 'apply_tier_pricing' ], 20 );
+
+		// 100 or more of one style is a quote, not an online order. Started from
+		// here rather than as a module of its own because the framework's cached
+		// module list on production would not pick up a new module.
+		( new QuoteLimit() )->register();
 	}
 
 	/**

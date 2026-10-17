@@ -448,6 +448,27 @@
 	display: none;
 }
 
+/* 100 or more of one style is a quote, not an online order (see QuoteLimit.php
+   and quote-limit.js). The message sits under the quantity and button, and the
+   button is dimmed while the number is over the limit. */
+.tbb-quote-notice {
+	border-left: 3px solid var(--wp--preset--color--error);
+	flex: 1 1 100%;
+	font-size: var(--wp--preset--font-size--sm);
+	margin: var(--wp--custom--spacing--12) 0 0;
+	padding-left: var(--wp--custom--spacing--12);
+}
+
+.tbb-quote-notice a {
+	color: inherit;
+	text-decoration: underline;
+}
+
+.woocommerce div.product .single_add_to_cart_button.tbb-quote-blocked {
+	cursor: not-allowed;
+	opacity: 0.4;
+}
+
 /* Add-to-cart row: quantity stepper + add-to-cart button, divided from the
    bulk-order CTA below by a bottom border. */
 .woocommerce div.product form.variations_form .woocommerce-variation-add-to-cart {
