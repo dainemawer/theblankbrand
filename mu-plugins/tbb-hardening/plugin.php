@@ -41,6 +41,14 @@ class Hardening {
 	const LOGIN_ERROR_CODES = [ 'invalid_username', 'incorrect_password', 'invalid_email' ];
 
 	/**
+	 * The referrer policy, sent as a header and as a meta tag. The host's front layer
+	 * replaces the header with its own (no-referrer-when-downgrade), which still sends
+	 * the full URL, order key included, to other sites on HTTPS. Browsers honour the
+	 * meta tag over the header, so the tag is what makes it stick.
+	 */
+	const REFERRER_POLICY = 'strict-origin-when-cross-origin';
+
+	/**
 	 * Seconds browsers are told to insist on HTTPS: 180 days. Short of a year on
 	 * purpose, since this cannot be undone from the server once a browser has it.
 	 */
@@ -59,6 +67,9 @@ class Hardening {
 
 		add_action( 'send_headers', [ __CLASS__, 'send_security_headers' ] );
 		add_action( 'login_init', [ __CLASS__, 'send_security_headers' ] );
+
+		add_action( 'wp_head', [ __CLASS__, 'print_referrer_meta' ], 1 );
+		add_action( 'login_head', [ __CLASS__, 'print_referrer_meta' ], 1 );
 	}
 
 	/**
@@ -136,9 +147,13 @@ class Hardening {
 	 */
 	public static function headers(): array {
 		$headers = [
-			'X-Frame-Options'    => 'SAMEORIGIN',
-			'Referrer-Policy'    => 'strict-origin-when-cross-origin',
-			'Permissions-Policy' => 'camera=(), microphone=(), geolocation=()',
+			'X-Frame-Options'         => 'SAMEORIGIN',
+			// The host drops X-Frame-Options before it reaches visitors, so say the same
+			// thing in the header that replaced it. frame-ancestors only limits who may
+			// frame these pages; it cannot block Paystack or the Google tools.
+			'Content-Security-Policy' => "frame-ancestors 'self'",
+			'Referrer-Policy'         => self::REFERRER_POLICY,
+			'Permissions-Policy'      => 'camera=(), microphone=(), geolocation=()',
 		];
 
 		if ( is_ssl() ) {
@@ -164,8 +179,20 @@ class Hardening {
 		}
 
 		foreach ( self::headers() as $name => $value ) {
-			header( $name . ': ' . $value, true );
+			// A Content-Security-Policy is added beside any other one, never in place of it:
+			// two policies both apply, whereas replacing one would silently drop a stricter
+			// policy another plugin set.
+			header( $name . ': ' . $value, 'Content-Security-Policy' !== $name );
 		}
+	}
+
+	/**
+	 * Print the referrer policy as a meta tag in the page head.
+	 *
+	 * @return void
+	 */
+	public static function print_referrer_meta(): void {
+		printf( '<meta name="referrer" content="%s" />' . "\n", esc_attr( self::REFERRER_POLICY ) );
 	}
 }
 

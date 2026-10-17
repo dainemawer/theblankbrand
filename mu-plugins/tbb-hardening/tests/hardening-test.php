@@ -128,14 +128,16 @@ unset( $GLOBALS['errors'] );
 // ------------------------------------------------------------------ the headers
 
 echo "\nSecurity headers\n";
-[ $code, $h ] = $get( '/' );
+[ $code, $h, $home_body ] = $get( '/' );
 $is( 'the home page loads', 200, $code );
 $is( 'it says it cannot be framed by other sites', 'SAMEORIGIN', is_object( $h ) ? (string) $h['x-frame-options'] : '' );
 $is( 'it stops full URLs reaching other sites', 'strict-origin-when-cross-origin', is_object( $h ) ? (string) $h['referrer-policy'] : '' );
+$is( 'it also says so with frame-ancestors, which the host does not strip', "frame-ancestors 'self'", is_object( $h ) ? (string) $h['content-security-policy'] : '' );
+$yes( 'the page head carries a referrer meta tag, which browsers honour over the header', 1 === preg_match( '/<meta name="referrer" content="strict-origin-when-cross-origin" \/>/', $home_body ) );
 $yes( 'it switches off the camera, microphone and location', is_object( $h ) && false !== strpos( (string) $h['permissions-policy'], 'camera=()' ) && false !== strpos( (string) $h['permissions-policy'], 'geolocation=()' ) );
 $yes( 'over HTTPS it asks browsers to insist on HTTPS', is_object( $h ) && 0 === strpos( (string) $h['strict-transport-security'], 'max-age=15552000' ) );
-[ $code, $h ] = $get( '/wp-login.php' );
-$yes( 'the login page carries the headers too', 200 === $code && is_object( $h ) && 'SAMEORIGIN' === (string) $h['x-frame-options'] && 'strict-origin-when-cross-origin' === (string) $h['referrer-policy'] );
+[ $code, $h, $login_body ] = $get( '/wp-login.php' );
+$yes( 'the login page carries the headers and the meta tag too', 200 === $code && is_object( $h ) && 'SAMEORIGIN' === (string) $h['x-frame-options'] && 'strict-origin-when-cross-origin' === (string) $h['referrer-policy'] && false !== strpos( $login_body, 'name="referrer"' ) );
 
 $old_https = $_SERVER['HTTPS'] ?? null;
 unset( $_SERVER['HTTPS'] );
