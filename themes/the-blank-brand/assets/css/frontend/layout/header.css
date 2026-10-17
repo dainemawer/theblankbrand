@@ -179,7 +179,9 @@ body.admin-bar .site-header {
 	position: relative;
 }
 
-.site-header__cart-toggle {
+.site-header__cart-toggle,
+.site-header__account-toggle,
+.site-header__account-link {
 	align-items: center;
 	background: transparent;
 	border: none;
@@ -196,11 +198,15 @@ body.admin-bar .site-header {
 	transition: color 0.15s ease;
 }
 
-.site-header__cart-toggle:hover {
+.site-header__cart-toggle:hover,
+.site-header__account-toggle:hover,
+.site-header__account-link:hover {
 	color: var(--wp--preset--color--secondary);
 }
 
-.site-header__cart-toggle:focus-visible {
+.site-header__cart-toggle:focus-visible,
+.site-header__account-toggle:focus-visible,
+.site-header__account-link:focus-visible {
 	outline: 2px solid var(--wp--preset--color--primary);
 	outline-offset: 2px;
 }
@@ -244,6 +250,125 @@ body.admin-bar .site-header {
 	position: absolute;
 	width: 1px;
 	word-wrap: normal;
+}
+
+/* ==========================================================================
+   Account: a Log in link for visitors, a dropdown for customers
+   ========================================================================== */
+
+.site-header__account {
+	flex-shrink: 0;
+	position: relative;
+}
+
+.site-header__account-link {
+	text-decoration: none;
+}
+
+.site-header__account-icon {
+	display: block;
+	flex-shrink: 0;
+}
+
+/* The word "Log in" only shows where there is room; the icon carries it on a phone,
+   and the text stays in the page for screen readers. */
+.site-header__account-label {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
+@media (min-width: 68.75em) {
+	.site-header__account-label {
+		clip: auto;
+		clip-path: none;
+		font-family: var(--wp--preset--font-family--asap);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		height: auto;
+		margin: 0;
+		overflow: visible;
+		position: static;
+		width: auto;
+	}
+}
+
+.site-header__account-menu {
+	background-color: var(--wp--preset--color--primary);
+	border: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	border-radius: var(--wp--custom--border-radius--md);
+	box-shadow: 0 8px 32px rgb(0 0 0 / 0.12);
+	color: var(--wp--preset--color--tertiary);
+	padding: var(--wp--custom--spacing--16);
+	position: absolute;
+	right: 0;
+	top: calc(100% + 8px);
+	width: 16rem;
+	z-index: 200;
+}
+
+.site-header__account-menu[hidden] {
+	display: none;
+}
+
+.site-header__account-name {
+	border-bottom: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	color: var(--wp--preset--color--muted);
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	margin: 0 0 var(--wp--custom--spacing--8);
+	overflow-wrap: anywhere;
+	padding-bottom: var(--wp--custom--spacing--12);
+}
+
+.site-header__account-name strong {
+	color: var(--wp--preset--color--tertiary);
+	display: block;
+	font-weight: 600;
+}
+
+.site-header__account-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.site-header__account-list a,
+.site-header__account-logout {
+	align-items: center;
+	border-radius: var(--wp--custom--border-radius--sm);
+	color: var(--wp--preset--color--tertiary);
+	display: flex;
+	font-family: var(--wp--preset--font-family--asap);
+	font-size: var(--wp--preset--font-size--sm);
+	font-weight: 500;
+	min-height: 2.75rem;
+	padding: var(--wp--custom--spacing--8) var(--wp--custom--spacing--12);
+	text-decoration: none;
+	transition: background-color 0.15s ease;
+}
+
+.site-header__account-list a:hover,
+.site-header__account-list a:focus-visible,
+.site-header__account-logout:hover,
+.site-header__account-logout:focus-visible {
+	background-color: #f2f2f2;
+	color: var(--wp--preset--color--tertiary);
+}
+
+.site-header__account-logout {
+	border-top: 1px solid var(--wp--preset--color--border, #e5e7eb);
+	border-radius: 0;
+	font-weight: 600;
+	margin-top: var(--wp--custom--spacing--8);
+	padding-top: var(--wp--custom--spacing--8);
 }
 
 /* Minicart panel */
@@ -658,13 +783,19 @@ html.no-js .nav-dropdown-toggle {
 	   icon is not the right-most item here (the menu button sits after it), so a
 	   panel anchored to the icon ran off the left edge. Anchor it to the header,
 	   which spans the viewport, instead. */
-	.site-header__cart {
+	.site-header__cart,
+	.site-header__account {
 		position: static;
 	}
 
 	.site-header__minicart {
 		right: 1rem;
 		width: min(22rem, calc(100% - 2rem));
+	}
+
+	.site-header__account-menu {
+		right: 1rem;
+		width: min(18rem, calc(100% - 2rem));
 	}
 
 	/* No-JS fallback: the drawer can't be toggled without JS, so render
