@@ -296,7 +296,7 @@ $ok( 'and in the built stylesheet', false !== strpos( $dist, 'form.variations_fo
 $hdr = file_get_contents( get_theme_file_path( 'assets/css/frontend/layout/header.css' ) );
 $ok( 'the mini cart thumbnail is not floated right', 1 === preg_match( '/\.woocommerce-mini-cart \.woocommerce-mini-cart-item img\s*\{[^}]*float:\s*none/', $hdr ) );
 $ok( 'the mini cart item places remove button, thumbnail and details in three columns, the button on the left', 1 === preg_match( '/\.woocommerce-mini-cart-item\s*\{[^}]*grid-template-columns:\s*1\.5rem var\(--minicart-thumb\) 1fr/', $hdr ) );
-$ok( '  with a square thumbnail, cropped to fit', 1 === preg_match( '/\.woocommerce-mini-cart-item img\s*\{[^}]*aspect-ratio:\s*1;[^}]*object-fit:\s*cover/', $hdr ) );
+$ok( '  with a square thumbnail, cropped from the top so the model\'s face stays in', 1 === preg_match( '/\.woocommerce-mini-cart-item img\s*\{[^}]*aspect-ratio:\s*1;[^}]*object-fit:\s*cover;[^}]*object-position:\s*center top/', $hdr ) );
 $ok( '  and room between the last item\'s rule and the subtotal', 1 === preg_match( '/\.woocommerce-mini-cart\.cart_list\s*\{[^}]*margin:\s*0 0 var\(--wp--custom--spacing--24\)/', $hdr ) );
 $ok( 'the remove button is a centred square, so its hover circle is round', 1 === preg_match( '/\.woocommerce-mini-cart-item \.remove\s*\{[^}]*border-radius:\s*50%[^}]*height:\s*1\.5rem[^}]*justify-content:\s*center[^}]*width:\s*1\.5rem/s', $hdr ) );
 $ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart(,\s*\.site-header__account)?\s*\{\s*position:\s*static/', $hdr ) );

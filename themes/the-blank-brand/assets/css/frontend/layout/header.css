@@ -438,6 +438,9 @@ body.admin-bar .site-header {
 	height: auto;
 	margin: 0;
 	object-fit: cover;
+	/* The photos are full-length studio shots with the face near the top, so crop
+	   from the top and the face stays in the square. */
+	object-position: center top;
 	width: var(--minicart-thumb);
 }
 
