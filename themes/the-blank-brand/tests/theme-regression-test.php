@@ -300,6 +300,13 @@ $ok( 'the remove button is a centred square, so its hover circle is round', 1 ==
 $ok( 'on small screens the mini cart panel is anchored to the header, not the icon', 1 === preg_match( '/\.site-header__cart\s*\{\s*position:\s*static/', $hdr ) );
 $ok( 'the bulk notice lists variations in a row, not a stacked list', 1 === preg_match( '/ul\.wcbvp-cart-variation-list\s*\{[^}]*display:\s*flex[^}]*list-style:\s*none/s', $src ) );
 
+// Checkout terms links, and the quote limit's product page pieces.
+$ok( 'the terms and privacy links on checkout are black, not the white link colour', 1 === preg_match( '/\.wc-block-checkout__terms a\s*\{[^}]*color:\s*var\(--wp--preset--color--tertiary\)/', $src ) );
+$ok( 'and the built stylesheet carries it', false !== strpos( $dist, '.wc-block-checkout__terms a{color:var(--wp--preset--color--tertiary)' ) );
+$quote_js = file_get_contents( get_theme_file_path( 'assets/js/quote-limit.js' ) );
+$ok( 'the product page script blocks a submit over the limit', false !== strpos( $quote_js, "addEventListener(\n\t\t'submit'" ) || false !== strpos( $quote_js, "'submit'" ) );
+$ok( 'and the quote notice is styled', false !== strpos( $dist, '.tbb-quote-notice' ) );
+
 printf( "\n%d passed, %d failed\n", $pass, $fail );
 if ( $fails ) { foreach ( $fails as $f ) { echo "  - $f\n"; }
 }

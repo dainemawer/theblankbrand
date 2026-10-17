@@ -812,6 +812,20 @@ body .woocommerce-message::after {
 	color: var(--wp--preset--color--tertiary);
 }
 
+/* Links in the terms line above Place order. The theme's link colour is white,
+   which is right in the black header and footer and left these two invisible on
+   the white checkout. Black, underlined, and a mid grey on hover (the global
+   hover colour is a light grey that would fade them out again). */
+.wc-block-checkout__terms a {
+	color: var(--wp--preset--color--tertiary);
+	text-decoration: underline;
+}
+
+.wc-block-checkout__terms a:hover,
+.wc-block-checkout__terms a:focus-visible {
+	color: var(--wp--preset--color--muted);
+}
+
 /* Sticky checkout summary — the sticky element is the sidebar column (WooCommerce
    sets `top: 24px` on `.wc-block-checkout__sidebar`), not the order-summary block
    inside it. Offset its sticky top by the site header height plus the original
